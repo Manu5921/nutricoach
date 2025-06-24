@@ -15,7 +15,7 @@ const nextConfig = {
   experimental: {
     // Optimize memory usage during build
     webpackBuildWorker: true,
-    // nodeMiddleware: true, // Removed as per user feedback, not needed for Next.js stable
+    nodeMiddleware: true, // Restored as per Vercel build requirement
   },
   
   // Security headers
