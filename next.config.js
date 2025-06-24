@@ -15,7 +15,7 @@ const nextConfig = {
   experimental: {
     // Optimize memory usage during build
     webpackBuildWorker: true,
-    nodeMiddleware: true, // Restored as per Vercel build requirement
+    // nodeMiddleware: true, // Commented out: requires Next.js Canary as per error
   },
   
   // Security headers
