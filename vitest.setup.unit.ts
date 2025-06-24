@@ -3,7 +3,7 @@
  * Configuration for isolated unit tests
  */
 
-import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest'
+import { beforeAll, afterAll, beforeEach, afterEach, expect } from 'vitest' // Added expect
 import { vi } from 'vitest'
 
 // Mock console methods in CI
@@ -24,7 +24,7 @@ beforeAll(() => {
   process.env.TZ = 'UTC'
   
   // Mock environment variables
-  process.env.NODE_ENV = 'test'
+  // process.env.NODE_ENV = 'test'; // Should be set by Vitest config or test runner
   process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321'
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'
 })

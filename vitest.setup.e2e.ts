@@ -12,7 +12,7 @@ const TEST_TIMEOUT = 60000
 
 beforeAll(async () => {
   // Set test environment
-  process.env.NODE_ENV = 'test'
+  // process.env.NODE_ENV = 'test'; // Should be set by Vitest config or test runner
   process.env.TZ = 'UTC'
   
   // Wait for application to be ready
@@ -55,7 +55,7 @@ async function waitForApp(maxAttempts = 30) {
 // Mock browser APIs for E2E tests
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: vi.fn().mockImplementation(query => ({
+  value: vi.fn().mockImplementation((query: string) => ({
     matches: false,
     media: query,
     onchange: null,

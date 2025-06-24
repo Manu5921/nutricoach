@@ -5,7 +5,7 @@ import { SecurityAudit } from '@/lib/auth/security'
 import { SecurityLevel } from '@/lib/auth/types'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16'
+  apiVersion: '2025-02-24.acacia'
 })
 
 export async function POST(request: NextRequest) {
@@ -20,7 +20,14 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createServerComponentClient()
-    const ipAddress = request.ip || request.headers.get('x-forwarded-for') || 'unknown'
+    let ipAddress: string | undefined
+    const xForwardedFor = request.headers.get('x-forwarded-for')
+    if (xForwardedFor) {
+      ipAddress = xForwardedFor.split(',')[0].trim()
+    }
+    if (!ipAddress) {
+      ipAddress = 'unknown'
+    }
     const userAgent = request.headers.get('user-agent') || 'unknown'
 
     // Get user info

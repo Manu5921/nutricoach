@@ -5,6 +5,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { Database } from './types'
+import type { UserProfile } from './types' // Import UserProfile for internal use
 
 // Initialize typed Supabase client
 export const supabase = createClient<Database>(

@@ -17,7 +17,16 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createRouteHandlerClient({ cookies })
-    const ipAddress = request.ip || request.headers.get('x-forwarded-for') || 'unknown'
+    let ipAddress: string | undefined
+    const xForwardedFor = request.headers.get('x-forwarded-for')
+    if (xForwardedFor) {
+      ipAddress = xForwardedFor.split(',')[0].trim()
+    }
+    if (!ipAddress) {
+      // Fallback for environments where x-forwarded-for might not be set
+      // Note: request.ip is not reliably available in Edge environments
+      ipAddress = 'unknown'
+    }
     const userAgent = request.headers.get('user-agent') || 'unknown'
 
     // Check if account is locked before attempting login

@@ -3,7 +3,11 @@ import { UserProfile, EncryptedHealthProfile, SecurityLevel } from './types'
 import { DataEncryption, SecurityAudit, AccessControl, HealthDataSecurity } from './security'
 
 export class UserService {
-  private supabase = createServerComponentClient()
+  // private supabase = createServerComponentClient() // Modifié pour initialisation paresseuse
+
+  private getSupabaseClient() {
+    return createServerComponentClient();
+  }
 
   /**
    * Get user profile with appropriate security filtering
@@ -23,7 +27,8 @@ export class UserService {
         ...auditInfo
       })
 
-      const { data: user, error } = await this.supabase
+      const supabase = this.getSupabaseClient();
+      const { data: user, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
@@ -114,7 +119,8 @@ export class UserService {
       }
 
       // Update in database
-      const { data: updatedUser, error } = await this.supabase
+      const supabase = this.getSupabaseClient();
+      const { data: updatedUser, error } = await supabase
         .from('users')
         .update(dbUpdates)
         .eq('id', userId)
@@ -135,7 +141,16 @@ export class UserService {
       })
 
       // Return updated profile
-      return this.getUserProfile(userId, SecurityLevel.SENSITIVE, auditInfo)
+      const updatedFullProfile = await this.getUserProfile(userId, SecurityLevel.SENSITIVE, auditInfo);
+      if (!updatedFullProfile) {
+        // This case should be rare if the update was successful and the user exists.
+        // Log a critical error and potentially throw an exception.
+        const errorMessage = `Failed to retrieve profile for user ${userId} after update.`;
+        console.error(errorMessage);
+        // Ensure audit log reflects this specific failure if necessary, though the catch block might already cover it.
+        throw new Error(errorMessage);
+      }
+      return updatedFullProfile;
     } catch (error) {
       console.error('Error updating user profile:', error)
       
@@ -182,7 +197,8 @@ export class UserService {
         updated_at: new Date().toISOString()
       }
 
-      const { data: createdUser, error } = await this.supabase
+      const supabase = this.getSupabaseClient();
+      const { data: createdUser, error } = await supabase
         .from('users')
         .insert(newUser)
         .select()
@@ -221,7 +237,8 @@ export class UserService {
       const encryptedProfile = HealthDataSecurity.encryptHealthProfile(healthProfile)
 
       // Update in database
-      const { error } = await this.supabase
+      const supabase = this.getSupabaseClient();
+      const { error } = await supabase
         .from('users')
         .update({ 
           health_profile_encrypted: encryptedProfile,
@@ -266,7 +283,8 @@ export class UserService {
     trialEndsAt?: string
     stripeCustomerId?: string
   }> {
-    const { data: user, error } = await this.supabase
+    const supabase = this.getSupabaseClient();
+    const { data: user, error } = await supabase
       .from('users')
       .select('subscription_status, current_period_end, trial_ends_at, stripe_customer_id')
       .eq('id', userId)
@@ -299,7 +317,8 @@ export class UserService {
     auditInfo: { ipAddress: string; userAgent: string }
   ): Promise<void> {
     try {
-      const { error } = await this.supabase
+      const supabase = this.getSupabaseClient();
+      const { error } = await supabase
         .from('users')
         .update({
           subscription_status: subscriptionData.status,
@@ -333,7 +352,8 @@ export class UserService {
    * Check if user has active subscription or trial
    */
   async hasActiveAccess(userId: string): Promise<boolean> {
-    const { data: user, error } = await this.supabase
+    const supabase = this.getSupabaseClient();
+    const { data: user, error } = await supabase
       .from('users')
       .select('subscription_status, trial_ends_at, current_period_end')
       .eq('id', userId)
@@ -376,7 +396,8 @@ export class UserService {
       })
 
       // Delete user data (cascading deletes will handle related tables)
-      const { error } = await this.supabase
+      const supabase = this.getSupabaseClient();
+      const { error } = await supabase
         .from('users')
         .delete()
         .eq('id', userId)
@@ -414,7 +435,8 @@ export class UserService {
       const auditLogs = await SecurityAudit.getAuditLogs(userId)
       
       // Get usage events
-      const { data: usageEvents } = await this.supabase
+      const supabase = this.getSupabaseClient();
+      const { data: usageEvents } = await supabase
         .from('usage_events')
         .select('*')
         .eq('user_id', userId)

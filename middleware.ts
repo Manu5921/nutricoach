@@ -1,3 +1,5 @@
+export const runtime = 'nodejs'; // Force Node.js runtime pour compatibilité avec le module crypto
+
 import { createMiddlewareClient } from '@/lib/supabase-server'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
@@ -58,7 +60,16 @@ export async function middleware(request: NextRequest) {
   }
 
   const userId = session.user.id
-  const ipAddress = request.ip || request.headers.get('x-forwarded-for') || 'unknown'
+  // Correctly get IP address in Edge Runtime and Node.js environments
+  let ipAddress: string | undefined
+  const xForwardedFor = request.headers.get('x-forwarded-for')
+  if (xForwardedFor) {
+    // x-forwarded-for can be a comma-separated list of IPs, the first one is the client's
+    ipAddress = xForwardedFor.split(',')[0].trim()
+  }
+  if (!ipAddress) {
+    ipAddress = 'unknown' // Fallback if no IP is found
+  }
   const userAgent = request.headers.get('user-agent') || 'unknown'
 
   try {

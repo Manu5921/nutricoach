@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Output configuration for production deployment
-  output: 'standalone',
+  // output: 'standalone', // Commented out as Vercel handles this optimally by default
   
   // Enable production browser source maps for debugging
   productionBrowserSourceMaps: false, // Disabled for security in production

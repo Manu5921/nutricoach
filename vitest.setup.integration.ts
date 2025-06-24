@@ -15,7 +15,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 
 beforeAll(async () => {
   // Set test environment
-  process.env.NODE_ENV = 'test'
+  // process.env.NODE_ENV = 'test'; // Should be set by Vitest config or test runner
   process.env.TZ = 'UTC'
   
   // Verify Supabase connection

@@ -19,17 +19,18 @@ export class DataEncryption {
   static encrypt(text: string): string {
     try {
       const key = this.getKey()
-      const iv = crypto.randomBytes(16)
-      const cipher = crypto.createCipher(ALGORITHM, key)
+      const iv = crypto.randomBytes(16) // Initialization Vector
+      const cipher = crypto.createCipheriv(ALGORITHM, key, iv)
       
       let encrypted = cipher.update(text, 'utf8', 'hex')
       encrypted += cipher.final('hex')
       
-      const authTag = cipher.getAuthTag()
+      const authTag = cipher.getAuthTag() // Get the authentication tag
       
+      // Store IV and authTag with the encrypted data
       return JSON.stringify({
-        encrypted,
         iv: iv.toString('hex'),
+        encryptedData: encrypted,
         authTag: authTag.toString('hex')
       })
     } catch (error) {
@@ -38,21 +39,22 @@ export class DataEncryption {
     }
   }
 
-  static decrypt(encryptedData: string): string {
+  static decrypt(encryptedPayload: string): string {
     try {
       const key = this.getKey()
-      const { encrypted, iv, authTag } = JSON.parse(encryptedData)
+      const { iv, encryptedData, authTag } = JSON.parse(encryptedPayload)
       
-      const decipher = crypto.createDecipher(ALGORITHM, key)
-      decipher.setAuthTag(Buffer.from(authTag, 'hex'))
+      const decipher = crypto.createDecipheriv(ALGORITHM, key, Buffer.from(iv, 'hex'))
+      decipher.setAuthTag(Buffer.from(authTag, 'hex')) // Set the authentication tag
       
-      let decrypted = decipher.update(encrypted, 'hex', 'utf8')
+      let decrypted = decipher.update(encryptedData, 'hex', 'utf8')
       decrypted += decipher.final('utf8')
       
       return decrypted
     } catch (error) {
       console.error('Decryption failed:', error)
-      throw new Error('Failed to decrypt sensitive data')
+      // It's crucial to handle decryption errors properly, as they can indicate tampering or incorrect key/IV
+      throw new Error('Failed to decrypt sensitive data. Data might be corrupted or tampered with.')
     }
   }
 
@@ -61,8 +63,8 @@ export class DataEncryption {
   }
 
   static decryptObject<T>(encryptedData: string): T {
-    const decrypted = this.decrypt(encryptedData)
-    return JSON.parse(decrypted)
+    const decryptedString = this.decrypt(encryptedData);
+    return JSON.parse(decryptedString) as T; // Ensure type T is returned
   }
 }
 
@@ -163,8 +165,9 @@ export class AccessControl {
 
     const filtered: Partial<T> = {}
     Object.keys(userData).forEach(key => {
-      if (allowedFields.has(key)) {
-        filtered[key] = userData[key]
+      const K = key as keyof T;
+      if (allowedFields.has(K as string)) { // Compare K as string with Set<string>
+        filtered[K] = userData[K];
       }
     })
 
@@ -246,6 +249,13 @@ export class SessionSecurity {
 /**
  * Health data specific encryption
  */
+// Define a base type for what's expected after decryption, even if it's initially broad
+type DecryptedHealthProfileData = {
+  encrypted_at: number;
+  data_version: string;
+  [key: string]: any; // Allow other properties
+};
+
 export class HealthDataSecurity {
   static encryptHealthProfile(profile: any): string {
     // Additional layer of encryption for health data
@@ -259,20 +269,20 @@ export class HealthDataSecurity {
     return DataEncryption.encryptObject(dataWithTimestamp)
   }
 
-  static decryptHealthProfile(encryptedProfile: string): any {
+  static decryptHealthProfile(encryptedProfile: string): any { // Return type is any as per original, but internal typing is improved
     try {
-      const decrypted = DataEncryption.decryptObject(encryptedProfile)
+      const decrypted = DataEncryption.decryptObject<DecryptedHealthProfileData>(encryptedProfile);
       
       // Verify data integrity
       if (!decrypted.encrypted_at || !decrypted.data_version) {
-        throw new Error('Invalid health data format')
+        throw new Error('Invalid health data format');
       }
       
       // Remove metadata
-      const { encrypted_at, data_version, ...profile } = decrypted
-      return profile
+      const { encrypted_at, data_version, ...profileData } = decrypted;
+      return profileData; // Return only the actual profile data
     } catch (error) {
-      console.error('Health data decryption failed:', error)
+      console.error('Health data decryption failed:', error);
       throw new Error('Unable to access health profile')
     }
   }

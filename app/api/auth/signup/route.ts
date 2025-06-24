@@ -35,7 +35,14 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createRouteHandlerClient({ cookies })
-    const ipAddress = request.ip || request.headers.get('x-forwarded-for') || 'unknown'
+    let ipAddress: string | undefined
+    const xForwardedFor = request.headers.get('x-forwarded-for')
+    if (xForwardedFor) {
+      ipAddress = xForwardedFor.split(',')[0].trim()
+    }
+    if (!ipAddress) {
+      ipAddress = 'unknown'
+    }
     const userAgent = request.headers.get('user-agent') || 'unknown'
 
     // Check if user already exists
