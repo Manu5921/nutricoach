@@ -1,0 +1,44 @@
+{
+  "name": "@nutricoach/shared-types",
+  "version": "1.0.0",
+  "description": "Shared TypeScript types and interfaces for NutriCoach ecosystem",
+  "main": "index.ts",
+  "types": "index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix"
+  },
+  "dependencies": {
+    "zod": "^3.25.29"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  },
+  "repository": {
+    "type": "git",
+    "directory": "packages/shared-types"
+  },
+  "exports": {
+    ".": "./index.ts",
+    "./api": "./src/api/index.ts",
+    "./nutrition": "./src/nutrition/index.ts",
+    "./economics": "./src/economics/index.ts",
+    "./system": "./src/system/index.ts",
+    "./user": "./src/user/index.ts",
+    "./content": "./src/content/index.ts",
+    "./common": "./src/common/index.ts",
+    "./validation": "./src/validation/index.ts"
+  },
+  "keywords": [
+    "nutricoach",
+    "types",
+    "typescript",
+    "interfaces",
+    "schemas"
+  ]
+}

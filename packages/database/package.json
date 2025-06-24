@@ -1,0 +1,43 @@
+{
+  "name": "@nutricoach/database",
+  "version": "1.0.0",
+  "description": "Database utilities and helpers for NutriCoach ecosystem",
+  "main": "index.ts",
+  "types": "index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.47.10"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  },
+  "peerDependencies": {
+    "@nutricoach/shared-types": "workspace:*",
+    "@nutricoach/utils": "workspace:*"
+  },
+  "repository": {
+    "type": "git",
+    "directory": "packages/database"
+  },
+  "exports": {
+    ".": "./index.ts",
+    "./client": "./src/client/index.ts",
+    "./helpers": "./src/helpers/index.ts",
+    "./migrations": "./src/migrations/index.ts"
+  },
+  "keywords": [
+    "nutricoach",
+    "database",
+    "supabase",
+    "helpers",
+    "utilities"
+  ]
+}

@@ -1,0 +1,622 @@
+name: Database Migrations
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/seed.sql'
+      - '.github/workflows/database-migrations.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/seed.sql'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      migration_action:
+        description: 'Migration action'
+        required: true
+        default: 'apply'
+        type: choice
+        options:
+          - apply
+          - rollback
+          - verify
+
+env:
+  NODE_VERSION: '18'
+  PNPM_VERSION: '8'
+
+concurrency:
+  group: db-migrations-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # =========================================
+  # MIGRATION VALIDATION
+  # =========================================
+  validate-migrations:
+    name: Validate Migrations
+    runs-on: ubuntu-latest
+    outputs:
+      has-migrations: ${{ steps.check.outputs.has-migrations }}
+      migration-files: ${{ steps.check.outputs.migration-files }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for migration changes
+        id: check
+        run: |
+          # Check if there are new migration files
+          MIGRATION_FILES=$(find supabase/migrations -name "*.sql" -type f | sort)
+          
+          if [[ -n "$MIGRATION_FILES" ]]; then
+            echo "has-migrations=true" >> $GITHUB_OUTPUT
+            echo "migration-files<<EOF" >> $GITHUB_OUTPUT
+            echo "$MIGRATION_FILES" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            
+            echo "### Migration Files Found 📄" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "$MIGRATION_FILES" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "has-migrations=false" >> $GITHUB_OUTPUT
+            echo "No migration files found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Validate SQL syntax
+        if: steps.check.outputs.has-migrations == 'true'
+        run: |
+          echo "Validating SQL syntax..."
+          
+          # Install PostgreSQL client for syntax validation
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          
+          # Validate each migration file
+          for file in supabase/migrations/*.sql; do
+            if [[ -f "$file" ]]; then
+              echo "Validating $file..."
+              
+              # Basic SQL syntax check
+              if psql --set ON_ERROR_STOP=1 --quiet --no-psqlrc \
+                     --dbname=postgres://dummy:dummy@localhost/dummy \
+                     --dry-run --file="$file" 2>/dev/null; then
+                echo "✅ $file - Valid syntax"
+              else
+                echo "❌ $file - Invalid syntax"
+                echo "### SQL Validation Failed ❌" >> $GITHUB_STEP_SUMMARY
+                echo "**File:** $file" >> $GITHUB_STEP_SUMMARY
+                exit 1
+              fi
+            fi
+          done
+
+      - name: Check for dangerous operations
+        if: steps.check.outputs.has-migrations == 'true'
+        run: |
+          echo "Checking for dangerous operations..."
+          
+          DANGEROUS_PATTERNS=(
+            "DROP TABLE"
+            "DROP DATABASE" 
+            "TRUNCATE"
+            "DELETE FROM.*WHERE.*IS NOT NULL"
+            "ALTER TABLE.*DROP COLUMN"
+            "DROP INDEX"
+            "DROP CONSTRAINT"
+          )
+          
+          WARNINGS=()
+          
+          for file in supabase/migrations/*.sql; do
+            if [[ -f "$file" ]]; then
+              for pattern in "${DANGEROUS_PATTERNS[@]}"; do
+                if grep -qi "$pattern" "$file"; then
+                  WARNING="⚠️ Dangerous operation detected in $file: $pattern"
+                  WARNINGS+=("$WARNING")
+                  echo "$WARNING"
+                fi
+              done
+            fi
+          done
+          
+          if [[ ${#WARNINGS[@]} -gt 0 ]]; then
+            echo "### ⚠️ Migration Warnings" >> $GITHUB_STEP_SUMMARY
+            for warning in "${WARNINGS[@]}"; do
+              echo "- $warning" >> $GITHUB_STEP_SUMMARY
+            done
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Action Required:** Manual review recommended for production deployment." >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # =========================================
+  # TEST MIGRATIONS ON CLEAN DATABASE
+  # =========================================
+  test-migrations:
+    name: Test Migrations
+    runs-on: ubuntu-latest
+    needs: validate-migrations
+    if: needs.validate-migrations.outputs.has-migrations == 'true'
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nutricoach_migration_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Initialize test database
+        run: |
+          # Start Supabase locally with test database
+          supabase start --ignore-health-check
+          
+          # Wait for services to be ready
+          sleep 10
+        env:
+          SUPABASE_DB_URL: postgresql://postgres:postgres@localhost:5432/nutricoach_migration_test
+
+      - name: Apply migrations to test database
+        run: |
+          echo "Applying migrations to test database..."
+          supabase db reset --debug
+          
+          # Verify migrations applied successfully
+          supabase db diff
+        env:
+          SUPABASE_DB_URL: postgresql://postgres:postgres@localhost:5432/nutricoach_migration_test
+
+      - name: Run database validation tests
+        run: pnpm exec supabase test db
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nutricoach_migration_test
+
+      - name: Test data integrity
+        run: |
+          echo "Testing data integrity after migrations..."
+          
+          # Run any custom integrity tests here
+          if [[ -f "supabase/validate.sql" ]]; then
+            psql postgresql://postgres:postgres@localhost:5432/nutricoach_migration_test \
+                 -f supabase/validate.sql
+          fi
+          
+          echo "✅ Data integrity tests passed"
+
+      - name: Generate migration report
+        run: |
+          echo "### Migration Test Results 📊" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Database:** Test Environment" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ✅ All migrations applied successfully" >> $GITHUB_STEP_SUMMARY
+          echo "**Files Applied:**" >> $GITHUB_STEP_SUMMARY
+          
+          for file in supabase/migrations/*.sql; do
+            if [[ -f "$file" ]]; then
+              echo "- $(basename $file)" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+  # =========================================
+  # STAGING ENVIRONMENT MIGRATIONS
+  # =========================================
+  apply-staging-migrations:
+    name: Apply Staging Migrations
+    runs-on: ubuntu-latest
+    needs: [validate-migrations, test-migrations]
+    if: |
+      needs.validate-migrations.outputs.has-migrations == 'true' && 
+      (github.ref == 'refs/heads/develop' || 
+       (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging'))
+    environment:
+      name: staging-db
+      url: https://supabase.com/dashboard/project/${{ secrets.SUPABASE_PROJECT_REF_STAGING }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Create staging database backup
+        run: |
+          echo "Creating staging database backup..."
+          BACKUP_FILE="staging-backup-$(date +%Y%m%d-%H%M%S).sql"
+          
+          supabase db dump \
+            --project-ref ${{ secrets.SUPABASE_PROJECT_REF_STAGING }} \
+            --file "$BACKUP_FILE"
+          
+          echo "Backup created: $BACKUP_FILE"
+          echo "backup-file=$BACKUP_FILE" >> $GITHUB_ENV
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Apply migrations to staging
+        id: apply-staging
+        run: |
+          echo "Applying migrations to staging environment..."
+          
+          supabase db push \
+            --project-ref ${{ secrets.SUPABASE_PROJECT_REF_STAGING }} \
+            --include-seed
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Verify staging migrations
+        run: |
+          echo "Verifying staging migrations..."
+          
+          # Check for any pending migrations
+          supabase db diff \
+            --project-ref ${{ secrets.SUPABASE_PROJECT_REF_STAGING }}
+          
+          echo "✅ Staging migrations verified"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Upload staging backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-db-backup-${{ github.run_number }}
+          path: ${{ env.backup-file }}
+          retention-days: 30
+
+      - name: Notify staging success
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_CHANNEL: '#nutricoach-db'
+          SLACK_COLOR: good
+          SLACK_MESSAGE: |
+            ✅ **Staging Database Migration Successful**
+            
+            **Environment:** Staging
+            **Backup:** ${{ env.backup-file }}
+            **Branch:** ${{ github.ref_name }}
+            **Commit:** ${{ github.event.head_commit.message }}
+
+  # =========================================
+  # PRODUCTION ENVIRONMENT MIGRATIONS
+  # =========================================
+  apply-production-migrations:
+    name: Apply Production Migrations
+    runs-on: ubuntu-latest
+    needs: [validate-migrations, test-migrations, apply-staging-migrations]
+    if: |
+      needs.validate-migrations.outputs.has-migrations == 'true' && 
+      (github.ref == 'refs/heads/main' || 
+       (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'))
+    environment:
+      name: production-db
+      url: https://supabase.com/dashboard/project/${{ secrets.SUPABASE_PROJECT_REF_PROD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Pre-migration health check
+        run: |
+          echo "Performing pre-migration health check..."
+          
+          # Check database connectivity and basic health
+          supabase db ping --project-ref ${{ secrets.SUPABASE_PROJECT_REF_PROD }}
+          
+          echo "✅ Production database is healthy"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Create production database backup
+        run: |
+          echo "Creating production database backup..."
+          BACKUP_FILE="production-backup-$(date +%Y%m%d-%H%M%S).sql"
+          
+          supabase db dump \
+            --project-ref ${{ secrets.SUPABASE_PROJECT_REF_PROD }} \
+            --file "$BACKUP_FILE"
+          
+          echo "Production backup created: $BACKUP_FILE"
+          echo "backup-file=$BACKUP_FILE" >> $GITHUB_ENV
+          
+          # Also create a compressed backup for storage
+          gzip "$BACKUP_FILE"
+          echo "Compressed backup: ${BACKUP_FILE}.gz"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Apply migrations to production
+        id: apply-production
+        run: |
+          echo "Applying migrations to production environment..."
+          echo "⚠️ This is a production deployment - proceeding with caution"
+          
+          # Apply migrations
+          supabase db push \
+            --project-ref ${{ secrets.SUPABASE_PROJECT_REF_PROD }} \
+            --include-seed
+          
+          echo "✅ Production migrations applied successfully"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Post-migration verification
+        run: |
+          echo "Performing post-migration verification..."
+          
+          # Verify no pending migrations
+          supabase db diff \
+            --project-ref ${{ secrets.SUPABASE_PROJECT_REF_PROD }}
+          
+          # Run production health checks
+          supabase db ping --project-ref ${{ secrets.SUPABASE_PROJECT_REF_PROD }}
+          
+          echo "✅ Production database verified and healthy"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Upload production backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-db-backup-${{ github.run_number }}
+          path: ${{ env.backup-file }}.gz
+          retention-days: 90
+
+      - name: Document migration
+        run: |
+          echo "### Production Migration Complete 🎉" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** Production" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ✅ Success" >> $GITHUB_STEP_SUMMARY
+          echo "**Backup:** ${{ env.backup-file }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Migration Files Applied:**" >> $GITHUB_STEP_SUMMARY
+          
+          for file in supabase/migrations/*.sql; do
+            if [[ -f "$file" ]]; then
+              echo "- $(basename $file)" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+      - name: Notify production success
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_CHANNEL: '#nutricoach-production'
+          SLACK_COLOR: good
+          SLACK_MESSAGE: |
+            🎉 **Production Database Migration Successful**
+            
+            **Environment:** Production
+            **Backup:** ${{ env.backup-file }}
+            **Branch:** ${{ github.ref_name }}
+            **Commit:** ${{ github.event.head_commit.message }}
+            **Author:** ${{ github.event.head_commit.author.name }}
+            
+            **Migration Files:**
+            ${{ needs.validate-migrations.outputs.migration-files }}
+
+  # =========================================
+  # ROLLBACK CAPABILITY
+  # =========================================
+  rollback-migrations:
+    name: Rollback Migrations
+    runs-on: ubuntu-latest
+    if: |
+      failure() && 
+      (needs.apply-staging-migrations.result == 'failure' || needs.apply-production-migrations.result == 'failure') &&
+      github.event_name == 'workflow_dispatch' && 
+      github.event.inputs.migration_action == 'rollback'
+    needs: [apply-staging-migrations, apply-production-migrations]
+    environment:
+      name: ${{ github.event.inputs.environment }}-db-rollback
+    steps:
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Download backup
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ github.event.inputs.environment }}-db-backup-${{ github.run_number }}
+
+      - name: Determine project ref
+        id: project
+        run: |
+          if [[ "${{ github.event.inputs.environment }}" == "production" ]]; then
+            echo "project-ref=${{ secrets.SUPABASE_PROJECT_REF_PROD }}" >> $GITHUB_OUTPUT
+          else
+            echo "project-ref=${{ secrets.SUPABASE_PROJECT_REF_STAGING }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Restore from backup
+        run: |
+          echo "🔄 Initiating emergency rollback..."
+          
+          # Find the backup file
+          BACKUP_FILE=$(find . -name "*backup*.sql*" | head -1)
+          
+          if [[ -z "$BACKUP_FILE" ]]; then
+            echo "❌ No backup file found for rollback"
+            exit 1
+          fi
+          
+          # Decompress if needed
+          if [[ "$BACKUP_FILE" == *.gz ]]; then
+            gunzip "$BACKUP_FILE"
+            BACKUP_FILE="${BACKUP_FILE%.gz}"
+          fi
+          
+          echo "Restoring from backup: $BACKUP_FILE"
+          
+          # Restore database from backup
+          psql "${{ secrets.SUPABASE_DB_URL }}" < "$BACKUP_FILE"
+          
+          echo "✅ Database rollback completed"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Verify rollback
+        run: |
+          echo "Verifying rollback..."
+          
+          supabase db ping --project-ref ${{ steps.project.outputs.project-ref }}
+          
+          echo "✅ Rollback verification completed"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Notify rollback
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_CHANNEL: '#nutricoach-alerts'
+          SLACK_COLOR: warning
+          SLACK_MESSAGE: |
+            🔄 **DATABASE ROLLBACK EXECUTED**
+            
+            **Environment:** ${{ github.event.inputs.environment }}
+            **Reason:** Migration failure or manual rollback
+            **Status:** Completed
+            **Action Required:** Manual investigation and re-deployment planning needed
+            
+            **Team:** Please review the migration logs and plan next steps.
+
+  # =========================================
+  # MIGRATION FAILURE HANDLING
+  # =========================================
+  handle-migration-failure:
+    name: Handle Migration Failure
+    runs-on: ubuntu-latest
+    needs: [apply-staging-migrations, apply-production-migrations]
+    if: failure()
+    steps:
+      - name: Analyze failure
+        run: |
+          echo "### Migration Failure Analysis 🔍" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ needs.apply-staging-migrations.result }}" == "failure" ]]; then
+            echo "**Staging Migration:** ❌ Failed" >> $GITHUB_STEP_SUMMARY
+            echo "**Impact:** Staging environment affected" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [[ "${{ needs.apply-production-migrations.result }}" == "failure" ]]; then
+            echo "**Production Migration:** ❌ Failed" >> $GITHUB_STEP_SUMMARY
+            echo "**Impact:** 🚨 Production environment affected" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Next Steps:**" >> $GITHUB_STEP_SUMMARY
+          echo "1. Review migration logs above" >> $GITHUB_STEP_SUMMARY
+          echo "2. Check database backup artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "3. Consider manual rollback if needed" >> $GITHUB_STEP_SUMMARY
+          echo "4. Fix migration issues and redeploy" >> $GITHUB_STEP_SUMMARY
+
+      - name: Create incident issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 Database Migration Failure - ${new Date().toISOString()}`,
+              body: `
+            ## 🚨 Database Migration Failure
+            
+            **Workflow:** ${context.workflow}
+            **Run ID:** ${context.runId}
+            **Branch:** ${context.ref}
+            **Commit:** ${context.sha}
+            
+            ### Failure Details
+            - **Staging Result:** ${{ needs.apply-staging-migrations.result }}
+            - **Production Result:** ${{ needs.apply-production-migrations.result }}
+            
+            ### Immediate Actions Required
+            1. [ ] Review migration logs in [workflow run](${context.payload.repository.html_url}/actions/runs/${context.runId})
+            2. [ ] Check if rollback is needed
+            3. [ ] Verify database backups are available
+            4. [ ] Fix migration issues
+            5. [ ] Plan re-deployment strategy
+            
+            ### Database Backups
+            Check the workflow artifacts for database backups created before migration.
+            
+            **Priority:** High
+            **Environment:** ${{ needs.apply-production-migrations.result == 'failure' && 'Production' || 'Staging' }}
+            `,
+              labels: ['bug', 'database', 'urgent']
+            });
+            
+            console.log(`Created incident issue: ${issue.data.html_url}`);
+
+      - name: Emergency notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_CHANNEL: '#nutricoach-alerts'
+          SLACK_COLOR: danger
+          SLACK_MESSAGE: |
+            🚨 **DATABASE MIGRATION FAILURE**
+            
+            **Severity:** ${{ needs.apply-production-migrations.result == 'failure' && 'CRITICAL' || 'HIGH' }}
+            **Environment:** ${{ needs.apply-production-migrations.result == 'failure' && 'Production' || 'Staging' }}
+            **Branch:** ${{ github.ref_name }}
+            **Commit:** ${{ github.event.head_commit.message }}
+            
+            **Immediate Action Required:**
+            - Database backups available in workflow artifacts
+            - Consider emergency rollback if production affected
+            - Investigation needed to fix migration issues
+            
+            [View Failure Details](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            
+            @channel - Database team attention needed

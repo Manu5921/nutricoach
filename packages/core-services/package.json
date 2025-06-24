@@ -1,0 +1,51 @@
+{
+  "name": "@nutricoach/core-services",
+  "version": "1.0.0",
+  "description": "Core business services and utilities for NutriCoach ecosystem",
+  "main": "index.ts",
+  "types": "index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.47.10",
+    "zod": "^3.25.29"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2",
+    "vitest": "^1.0.0"
+  },
+  "peerDependencies": {
+    "@nutricoach/shared-types": "workspace:*",
+    "@nutricoach/utils": "workspace:*"
+  },
+  "repository": {
+    "type": "git",
+    "directory": "packages/core-services"
+  },
+  "exports": {
+    ".": "./index.ts",
+    "./data-fetching": "./src/data-fetching/index.ts",
+    "./plan-builder": "./src/plan-builder/index.ts",
+    "./user-management": "./src/user-management/index.ts",
+    "./content-management": "./src/content-management/index.ts",
+    "./notification-system": "./src/notification-system/index.ts",
+    "./session-management": "./src/session-management/index.ts"
+  },
+  "keywords": [
+    "nutricoach",
+    "nutrition",
+    "services",
+    "business-logic",
+    "core"
+  ]
+}

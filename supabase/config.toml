@@ -1,0 +1,182 @@
+# =============================================
+# NutriCoach Supabase Configuration
+# =============================================
+# Anti-inflammatory nutrition coaching platform
+
+[api]
+# API configuration
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[auth]
+# Authentication settings
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://nutricoach.vercel.app"]
+jwt_expiry = 3600
+jwt_secret = "super-secret-jwt-token-with-at-least-32-characters-long"
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+# Password requirements for security
+password_min_length = 8
+
+# Auth providers (configure based on requirements)
+[auth.external.apple]
+enabled = false
+
+[auth.external.azure]
+enabled = false
+
+[auth.external.bitbucket]
+enabled = false
+
+[auth.external.discord]
+enabled = false
+
+[auth.external.facebook]
+enabled = false
+
+[auth.external.github]
+enabled = false
+
+[auth.external.gitlab]
+enabled = false
+
+[auth.external.google]
+enabled = false
+
+[auth.external.keycloak]
+enabled = false
+
+[auth.external.linkedin_oidc]
+enabled = false
+
+[auth.external.notion]
+enabled = false
+
+[auth.external.twitch]
+enabled = false
+
+[auth.external.twitter]
+enabled = false
+
+[auth.external.slack_oidc]
+enabled = false
+
+[auth.external.spotify]
+enabled = false
+
+[auth.external.workos]
+enabled = false
+
+[auth.external.zoom]
+enabled = false
+
+[auth.email]
+# Email settings
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+smtp_admin_email = "admin@nutricoach.com"
+smtp_host = "smtp.gmail.com"
+smtp_port = 587
+smtp_user = ""
+smtp_pass = ""
+smtp_sender_name = "NutriCoach"
+
+[auth.sms]
+# SMS settings (disabled for development)
+enable_signup = false
+enable_confirmations = false
+
+[db]
+# Database configuration
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+# Supabase Studio settings
+enabled = true
+port = 54323
+api_url = "http://localhost:54321"
+
+[inbucket]
+# Email testing (development only)
+enabled = true
+port = 54324
+smtp_port = 54325
+pop3_port = 54326
+
+[storage]
+# File storage configuration
+enabled = true
+file_size_limit = "50MiB"
+image_transformation = { enabled = true }
+
+[analytics]
+# Analytics configuration
+enabled = false
+
+[functions]
+# Edge Functions configuration (for future use)
+[functions._cmd]
+import_map = "./functions/import_map.json"
+
+[edge_runtime]
+policy = "per_worker"
+inspector_port = 8083
+
+# =============================================
+# NutriCoach Specific Settings
+# =============================================
+
+# Custom configuration for nutrition app features
+[experimental]
+# Enable any experimental features needed
+webhooks = true
+
+# Security settings specific to nutrition/health data
+[security]
+# Additional security for health data compliance
+enable_rls = true
+jwt_audience = "authenticated"
+jwt_issuer = "supabase"
+
+# Custom schemas for nutrition data
+[custom_schemas]
+nutrition = true
+anti_inflammatory = true
+
+# =============================================
+# Database Seeding Configuration
+# =============================================
+[db.seed]
+enabled = true
+sql_paths = ['./seed.sql']
+
+# =============================================
+# Development vs Production Notes
+# =============================================
+
+# For production deployment:
+# 1. Update site_url to production domain
+# 2. Configure proper SMTP settings
+# 3. Enable required auth providers
+# 4. Set strong JWT secrets
+# 5. Configure proper CORS origins
+# 6. Enable SSL/TLS
+# 7. Set up proper backup strategies
+# 8. Configure monitoring and logging
+
+# For nutrition app specific features:
+# - File upload limits increased for recipe images
+# - RLS enabled by default for user data protection
+# - Email confirmations disabled for faster development
+# - Analytics can be enabled for user behavior insights
+# - Automatic seeding with anti-inflammatory nutrition data

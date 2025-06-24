@@ -1,0 +1,130 @@
+# OWASP ZAP Rules Configuration for NutriCoach
+# Format: RULE_ID	THRESHOLD	[DESCRIPTION]
+
+# Security Headers
+10010	MEDIUM	Cookie No HttpOnly Flag
+10011	MEDIUM	Cookie Without Secure Flag
+10015	LOW	Incomplete or No Cache-control and Pragma HTTP Header Set
+10016	MEDIUM	Web Browser XSS Protection Not Enabled
+10017	MEDIUM	Cross-Domain JavaScript Source File Inclusion
+10019	MEDIUM	Content-Type Header Missing
+10020	MEDIUM	X-Frame-Options Header Scanner
+10021	MEDIUM	X-Content-Type-Options Header Missing
+10023	MEDIUM	Information Disclosure - Debug Error Messages
+10024	MEDIUM	Information Disclosure - Sensitive Information in URL
+10025	MEDIUM	Information Disclosure - Sensitive Information in HTTP Referrer Header
+10026	MEDIUM	HTTP Parameter Override
+10027	MEDIUM	Information Disclosure - Suspicious Comments
+10028	MEDIUM	Open Redirect
+10029	MEDIUM	Cookie Poisoning
+10030	MEDIUM	User Controllable Charset
+10031	MEDIUM	User Controllable HTML Element Attribute (Potential XSS)
+10032	MEDIUM	Viewstate Scanner
+10033	MEDIUM	Directory Browsing
+10034	MEDIUM	Heartbleed OpenSSL Vulnerability (Indicative)
+10035	HIGH	Strict-Transport-Security Header Scanner
+10036	MEDIUM	Server Leaks Version Information via "Server" HTTP Response Header Field
+10037	MEDIUM	Server Leaks Information via "X-Powered-By" HTTP Response Header Field(s)
+10038	MEDIUM	Content Security Policy (CSP) Header Not Set
+10039	MEDIUM	X-Backend-Server Header Information Leak
+10040	MEDIUM	Secure Pages Include Mixed Content
+10041	MEDIUM	HTTP to HTTPS Insecure Transition in Form Post
+10042	MEDIUM	HTTPS to HTTP Insecure Transition in Form Post
+10043	MEDIUM	User Controllable JavaScript Event (XSS)
+10044	MEDIUM	Big Redirect Detected (Potential Sensitive Information Leak)
+10045	MEDIUM	Source Code Disclosure - /WEB-INF folder
+10046	MEDIUM	Source Code Disclosure - Git Information
+10047	HIGH	HTTPS Content Available via HTTP
+10048	MEDIUM	Remote Code Execution - Shell Shock
+10049	HIGH	Content Cacheability
+10050	MEDIUM	Retrieved from Cache
+10051	MEDIUM	Relative Path Confusion
+10052	MEDIUM	X-ChromeLogger-Data (XCOLD) Header Information Leak
+10054	MEDIUM	Cookie without SameSite Attribute
+10055	MEDIUM	CSP Scanner (Policy Disabled)
+10056	MEDIUM	X-Debug-Token Information Leak
+10057	MEDIUM	Username Hash Found
+10061	MEDIUM	X-AspNet-Version Response Header Scanner
+10062	MEDIUM	PII Scanner
+10063	MEDIUM	Feature Policy Header Not Set
+10096	HIGH	Timestamp Disclosure
+10097	MEDIUM	Hash Disclosure
+10098	MEDIUM	Cross-Domain Misconfiguration
+10099	MEDIUM	Source Code Disclosure
+
+# Authentication & Session Management
+10001	HIGH	Weak Authentication Method
+10003	HIGH	User Enumeration
+10004	MEDIUM	Weak Password Policy
+10005	HIGH	Cross Site Request Forgery
+10006	HIGH	Path Traversal
+10007	HIGH	Remote File Inclusion
+10008	HIGH	SQL Injection
+10009	HIGH	LDAP Injection
+10012	HIGH	Password Autocomplete in Browser
+10013	HIGH	Weak Authentication Method
+10014	HIGH	HTTP Parameter Pollution
+
+# Input Validation
+40003	MEDIUM	CRLF Injection
+40008	MEDIUM	Parameter Tampering
+40009	MEDIUM	Server Side Include
+40012	MEDIUM	Cross Site Scripting (Reflected)
+40013	MEDIUM	Session Fixation
+40014	MEDIUM	Cross Site Scripting (Persistent)
+40016	MEDIUM	Cross Site Scripting (Persistent) - Prime
+40017	MEDIUM	Cross Site Scripting (Persistent) - Spider
+40018	MEDIUM	SQL Injection
+40019	MEDIUM	SQL Injection - MySQL
+40020	MEDIUM	SQL Injection - Hypersonic SQL
+40021	MEDIUM	SQL Injection - Oracle
+40022	MEDIUM	SQL Injection - PostgreSQL
+40023	MEDIUM	Possible Username Enumeration
+40024	MEDIUM	SQL Injection - SQLite
+40025	MEDIUM	Proxy Disclosure
+40026	MEDIUM	Cross Site Scripting (DOM Based)
+40027	MEDIUM	SQL Injection - MsSQL
+40028	HIGH	ELMAH Information Leak
+40029	MEDIUM	Trace.axd Information Leak
+40032	MEDIUM	.htaccess Information Leak
+40033	MEDIUM	Loosely Scoped Cookie
+40034	MEDIUM	.env Information Leak
+40035	MEDIUM	Hidden File Finder
+
+# API Security
+90001	MEDIUM	Insecure HTTP Method
+90002	MEDIUM	Private IP Disclosure
+90003	MEDIUM	Sub Resource Integrity Attribute Missing
+90004	MEDIUM	Insufficient Site Isolation Against Spectre Vulnerability
+90011	MEDIUM	Charset Mismatch
+90017	MEDIUM	XSLT Injection
+90018	MEDIUM	SQL Injection - Blind
+90019	MEDIUM	Code Injection
+90020	MEDIUM	Command Injection
+90021	MEDIUM	XPath Injection
+90022	MEDIUM	Application Error Disclosure
+90023	MEDIUM	XML External Entity Attack
+90024	MEDIUM	Generic Padding Oracle
+90025	MEDIUM	Expression Language Injection
+90026	MEDIUM	SOAP Action Spoofing
+90027	MEDIUM	Cookie Slack Detector
+90028	MEDIUM	Insecure JSF ViewState
+90029	MEDIUM	SOAP XML Injection
+90030	MEDIUM	WSDL File Detection
+
+# Custom Rules for NutriCoach
+# Add application-specific rules here
+
+# Severity Thresholds:
+# IGNORE  - Do not report
+# INFO    - Informational finding
+# LOW     - Low risk
+# MEDIUM  - Medium risk  
+# HIGH    - High risk
+
+# API Endpoint specific rules
+10060	MEDIUM	Server Leaks Information via "X-Powered-By" HTTP Response Header Field(s)
+10061	MEDIUM	X-AspNet-Version Response Header Scanner
+10062	MEDIUM	PII Scanner
+10109	MEDIUM	Modern Web Application
+10110	LOW	Dangerous JS Function

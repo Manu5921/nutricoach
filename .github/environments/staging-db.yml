@@ -1,0 +1,337 @@
+# 🗃️ Staging Database Environment Configuration
+# Auto-deploy database migrations from develop branch with safety checks
+
+name: staging-db
+description: "Database schema and migration testing environment"
+
+# Environment Settings
+environment:
+  name: staging-db
+  description: "Staging database for testing migrations and schema changes"
+  
+# Protection Rules - Database Safety Focus
+protection_rules:
+  # No manual approval for staging DB
+  required_reviewers: 0
+  
+  # Minimal wait time for database operations
+  wait_timer: 2 # minutes
+  
+  # Prevent self-review
+  prevent_self_review: true
+  
+  # Deployment branch policy
+  deployment_branch_policy:
+    custom_branches: 
+      - "develop"
+      - "feature/*"
+      - "migration/*"
+      - "schema/*"
+    protected_branches: false
+    
+  # Database-specific security requirements
+  required_status_checks:
+    - "migration-safety"
+    - "schema-validation"
+    - "data-integrity"
+    - "rollback-verification"
+
+# Environment Variables Template
+# Database-focused secrets and configuration
+environment_variables:
+  # Supabase Database - Staging
+  SUPABASE_ACCESS_TOKEN: "{{ secrets.SUPABASE_ACCESS_TOKEN }}"
+  SUPABASE_PROJECT_REF_STAGING: "{{ secrets.SUPABASE_PROJECT_REF_STAGING }}"
+  SUPABASE_DB_URL_STAGING: "{{ secrets.SUPABASE_DB_URL_STAGING }}"
+  SUPABASE_SERVICE_ROLE_KEY_STAGING: "{{ secrets.SUPABASE_SERVICE_ROLE_KEY_STAGING }}"
+  SUPABASE_JWT_SECRET_STAGING: "{{ secrets.SUPABASE_JWT_SECRET_STAGING }}"
+  
+  # Database Migration Tools
+  DATABASE_MIGRATION_TOKEN: "{{ secrets.DATABASE_MIGRATION_TOKEN }}"
+  FLYWAY_USERNAME: "{{ secrets.FLYWAY_USERNAME }}"
+  FLYWAY_PASSWORD: "{{ secrets.FLYWAY_PASSWORD }}"
+  
+  # Backup and Recovery
+  DATABASE_BACKUP_TOKEN: "{{ secrets.DATABASE_BACKUP_TOKEN }}"
+  DATABASE_RESTORE_TOKEN: "{{ secrets.DATABASE_RESTORE_TOKEN }}"
+  
+  # Monitoring
+  DATABASE_MONITORING_TOKEN: "{{ secrets.DATABASE_MONITORING_TOKEN }}"
+  SENTRY_DSN_STAGING: "{{ secrets.SENTRY_DSN_STAGING }}"
+
+# Database Security Rules
+security_rules:
+  # Database-specific security checks
+  required_checks:
+    - "migration-safety"
+    - "schema-validation"
+    - "data-integrity"
+    - "sql-injection-scan"
+    - "privilege-escalation-check"
+    - "backup-verification"
+    - "rollback-test"
+    
+  # Auto-deployment configuration
+  auto_deploy:
+    enabled: true
+    branch: "develop"
+    require_status_checks: true
+    
+  # Database monitoring
+  monitoring:
+    enabled: true
+    real_time: true
+    metrics:
+      - "query-performance"
+      - "connection-pool"
+      - "lock-detection"
+      - "deadlock-monitoring"
+      - "storage-usage"
+    alerts:
+      - "migration-failure"
+      - "data-corruption"
+      - "performance-degradation"
+      - "security-violations"
+
+# Migration Configuration
+migration:
+  # Migration strategy
+  strategy: "sequential"
+  
+  # Safety checks before migration
+  pre_migration_checks:
+    - name: "schema_validation"
+      command: "npm run db:validate-schema"
+      timeout: 60
+      
+    - name: "data_backup"
+      command: "npm run db:backup-staging"
+      timeout: 300
+      
+    - name: "migration_dry_run"
+      command: "npm run db:migrate-dry-run"
+      timeout: 120
+      
+    - name: "rollback_verification"
+      command: "npm run db:verify-rollback"
+      timeout: 60
+      
+  # Migration execution
+  migration_execution:
+    timeout: 600 # 10 minutes
+    retry_attempts: 2
+    rollback_on_failure: true
+    
+  # Post-migration validation
+  post_migration_checks:
+    - name: "data_integrity"
+      command: "npm run db:verify-integrity"
+      timeout: 180
+      
+    - name: "performance_test"
+      command: "npm run db:performance-test"
+      timeout: 120
+      
+    - name: "security_scan"
+      command: "npm run db:security-scan"
+      timeout: 180
+
+# Deployment Configuration
+deployment:
+  # Database deployment strategy
+  strategy: "rolling"
+  
+  # Health checks
+  health_checks:
+    enabled: true
+    checks:
+      - name: "database_connection"
+        endpoint: "/api/health/db"
+        timeout: 30
+        retries: 3
+        
+      - name: "migration_status"
+        endpoint: "/api/health/migrations"
+        timeout: 15
+        retries: 2
+        
+      - name: "data_consistency"
+        endpoint: "/api/health/data-integrity"
+        timeout: 45
+        retries: 2
+    
+  # Rollback configuration
+  rollback:
+    enabled: true
+    automatic: true
+    conditions:
+      - "migration_failure"
+      - "data_corruption"
+      - "performance_degradation"
+      - "integrity_violation"
+    backup_required: true
+
+# Data Protection
+data_protection:
+  # Backup configuration
+  backup:
+    enabled: true
+    frequency: "before_each_migration"
+    retention: 30 # days
+    encryption: true
+    compression: true
+    
+  # Data masking for sensitive data
+  data_masking:
+    enabled: true
+    fields:
+      - "users.email"
+      - "users.phone"
+      - "payment.card_number"
+      - "profile.personal_data"
+      
+  # Data retention policies
+  retention_policies:
+    - table: "audit_logs"
+      retention_days: 90
+    - table: "session_data"
+      retention_days: 30
+    - table: "temp_data"
+      retention_days: 7
+
+# Monitoring and Alerting
+monitoring:
+  # Database metrics
+  metrics:
+    - "connection_count"
+    - "query_performance"
+    - "storage_usage"
+    - "migration_status"
+    - "replication_lag"
+    
+  # Performance thresholds
+  thresholds:
+    query_time_warning: 1000 # ms
+    query_time_critical: 5000 # ms
+    connection_warning: 80 # percent
+    connection_critical: 95 # percent
+    storage_warning: 75 # percent
+    storage_critical: 90 # percent
+    
+  # Alerting
+  alerts:
+    - type: "slack"
+      webhook_url: "{{ secrets.SLACK_WEBHOOK_URL }}"
+      channels:
+        - "#staging-db-alerts"
+        - "#devops"
+        
+    - type: "email"
+      recipients:
+        - "database@nutricoach.com"
+        - "devops@nutricoach.com"
+
+# Compliance and Audit
+compliance:
+  # Data governance
+  data_governance:
+    enabled: true
+    frameworks:
+      - "GDPR"
+      - "CCPA"
+      
+  # Audit logging
+  audit_logging:
+    enabled: true
+    events:
+      - "schema_changes"
+      - "data_modifications"
+      - "access_attempts"
+      - "privilege_changes"
+      - "migration_events"
+      
+  # Data classification
+  data_classification:
+    - classification: "public"
+      tables: ["categories", "tags"]
+    - classification: "internal"
+      tables: ["recipes", "blog_posts"]
+    - classification: "confidential"
+      tables: ["users", "user_profiles"]
+    - classification: "restricted"
+      tables: ["payments", "personal_data"]
+
+# Disaster Recovery
+disaster_recovery:
+  # Backup strategy
+  backup_strategy:
+    full_backup:
+      frequency: "daily"
+      time: "02:00 UTC"
+    incremental_backup:
+      frequency: "hourly"
+    transaction_log_backup:
+      frequency: "15 minutes"
+      
+  # Recovery procedures
+  recovery_procedures:
+    point_in_time_recovery: true
+    cross_region_replication: true
+    automated_failover: false # Manual for staging
+    
+  # Recovery time objectives
+  rto: 4 # hours (Recovery Time Objective)
+  rpo: 15 # minutes (Recovery Point Objective)
+
+# Testing and Validation
+testing:
+  # Automated tests
+  automated_tests:
+    - name: "migration_tests"
+      command: "npm run test:migrations"
+      timeout: 300
+      
+    - name: "schema_tests"
+      command: "npm run test:schema"
+      timeout: 180
+      
+    - name: "data_integrity_tests"
+      command: "npm run test:data-integrity"
+      timeout: 240
+      
+  # Performance tests
+  performance_tests:
+    - name: "query_performance"
+      command: "npm run test:query-performance"
+      timeout: 300
+      baseline_comparison: true
+      
+    - name: "load_test"
+      command: "npm run test:db-load"
+      timeout: 600
+      concurrent_connections: 50
+
+# Documentation
+documentation:
+  runbook_url: "https://docs.nutricoach.com/database/staging-operations"
+  migration_guide: "https://docs.nutricoach.com/database/migrations"
+  troubleshooting: "https://docs.nutricoach.com/database/troubleshooting"
+  
+  # Contact information
+  contact_info:
+    database_team: "database@nutricoach.com"
+    devops_team: "devops@nutricoach.com"
+    security_team: "security@nutricoach.com"
+    
+    # On-call contacts
+    database_oncall: "+1-555-DATABASE"
+    devops_oncall: "+1-555-DEVOPS"
+
+# Metadata
+metadata:
+  created_by: "Database Team"
+  last_updated: "2024-12-24"
+  version: "1.0"
+  review_date: "2025-03-24"
+  database_version: "PostgreSQL 15"
+  supabase_tier: "Pro"

@@ -1,0 +1,151 @@
+# GitLeaks Configuration for NutriCoach
+# Detects secrets and sensitive information in git repositories
+
+title = "NutriCoach GitLeaks Configuration"
+
+[extend]
+# Use default GitLeaks rules
+useDefault = true
+
+[[rules]]
+description = "AWS Access Key"
+id = "aws-access-key"
+regex = '''AKIA[0-9A-Z]{16}'''
+tags = ["key", "AWS"]
+
+[[rules]]
+description = "AWS Secret Key"
+id = "aws-secret-key"
+regex = '''(?i)aws(.{0,20})?(?-i)['\"][0-9a-zA-Z\/+]{40}['\"]'''
+tags = ["key", "AWS"]
+
+[[rules]]
+description = "GitHub Token"
+id = "github-token"
+regex = '''ghp_[0-9a-zA-Z]{36}'''
+tags = ["key", "GitHub"]
+
+[[rules]]
+description = "GitHub Fine-grained Token"
+id = "github-fine-grained-token"
+regex = '''github_pat_[0-9a-zA-Z_]{82}'''
+tags = ["key", "GitHub"]
+
+[[rules]]
+description = "Supabase Service Role Key"
+id = "supabase-service-role"
+regex = '''eyJ[A-Za-z0-9-_=]+\.eyJ[A-Za-z0-9-_=]+\.[A-Za-z0-9-_.+/=]*'''
+tags = ["key", "Supabase"]
+
+[[rules]]
+description = "Supabase Anon Key"
+id = "supabase-anon-key"
+regex = '''eyJ[A-Za-z0-9-_=]+\.eyJ[A-Za-z0-9-_=]+\.[A-Za-z0-9-_.+/=]*'''
+tags = ["key", "Supabase"]
+
+[[rules]]
+description = "OpenAI API Key"
+id = "openai-api-key"
+regex = '''sk-[A-Za-z0-9]{48}'''
+tags = ["key", "OpenAI"]
+
+[[rules]]
+description = "Stripe Secret Key"
+id = "stripe-secret-key"
+regex = '''sk_(test|live)_[0-9a-zA-Z]{24}'''
+tags = ["key", "Stripe"]
+
+[[rules]]
+description = "Stripe Publishable Key"
+id = "stripe-publishable-key"
+regex = '''pk_(test|live)_[0-9a-zA-Z]{24}'''
+tags = ["key", "Stripe"]
+
+[[rules]]
+description = "SendGrid API Key"
+id = "sendgrid-api-key"
+regex = '''SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}'''
+tags = ["key", "SendGrid"]
+
+[[rules]]
+description = "Vercel Token"
+id = "vercel-token"
+regex = '''[A-Za-z0-9]{24}'''
+tags = ["key", "Vercel"]
+
+[[rules]]
+description = "JWT Secret"
+id = "jwt-secret"
+regex = '''(?i)(jwt|token)(.{0,20})?['\"][0-9a-zA-Z\-_.]{32,}['\"]'''
+tags = ["key", "JWT"]
+
+[[rules]]
+description = "Database URL"
+id = "database-url"
+regex = '''postgres://[^:]+:[^@]+@[^/]+/[^?]+'''
+tags = ["database", "connection"]
+
+[[rules]]
+description = "Generic API Key"
+id = "generic-api-key"
+regex = '''(?i)(api|key|secret|token|password)(.{0,20})?['\"][0-9a-zA-Z\-_.]{16,}['\"]'''
+tags = ["key", "generic"]
+
+[[rules]]
+description = "Private Key"
+id = "private-key"
+regex = '''-----BEGIN (?:RSA |EC |DSA |)?PRIVATE KEY-----'''
+tags = ["key", "private"]
+
+[[rules]]
+description = "Generic Password"
+id = "generic-password"
+regex = '''(?i)password(.{0,20})?['\"][^'\"]{8,}['\"]'''
+tags = ["password"]
+
+# Allowlisted files and paths
+[allowlist]
+description = "Allowlisted files"
+files = [
+    "package-lock.json",
+    "pnpm-lock.yaml",
+    "yarn.lock",
+    ".gitignore",
+    "CHANGELOG.md",
+    "README.md",
+    ".gitleaks.toml"
+]
+
+paths = [
+    ".git/",
+    "node_modules/",
+    "dist/",
+    "build/",
+    ".next/",
+    "coverage/",
+    ".turbo/"
+]
+
+# Allowlisted rules for specific files
+regexes = [
+    # Allow test/example keys
+    '''test_key_[0-9a-zA-Z]{16}''',
+    '''example_[0-9a-zA-Z]{16}''',
+    '''demo_[0-9a-zA-Z]{16}''',
+    '''placeholder_[0-9a-zA-Z]{16}''',
+    # Allow documentation examples
+    '''your_api_key_here''',
+    '''<your.*key.*>''',
+    '''\[YOUR_.*\]''',
+    # Allow base64 encoded images
+    '''data:image/[^;]+;base64,''',
+    # Allow common false positives
+    '''sk-proj-[A-Za-z0-9-_]{20,}T3BlbkFJ[A-Za-z0-9-_]{20,}'''
+]
+
+# Entropy detection settings
+[entropy]
+group1 = 3.5  # Base64
+group2 = 3.0  # Hex
+group3 = 3.5  # Base32
+group4 = 3.0  # Base85

@@ -1,0 +1,144 @@
+# 🌱 Staging Environment Configuration
+# Auto-deploy from develop branch with basic security validation
+
+name: staging
+description: "Development testing and validation environment"
+
+# Environment Settings
+environment:
+  name: staging
+  description: "Staging environment for testing features from develop branch"
+  
+# Protection Rules
+protection_rules:
+  # No manual approval required for staging
+  required_reviewers: 0
+  
+  # Short wait time for staging deployments
+  wait_timer: 5 # minutes
+  
+  # Prevent self-review (if reviewers were required)
+  prevent_self_review: true
+  
+  # Deployment branch policy
+  deployment_branch_policy:
+    custom_branches: 
+      - "develop"
+      - "feature/*"
+      - "hotfix/*"
+    protected_branches: false
+
+# Environment Variables Template
+# These should be configured in GitHub UI
+environment_variables:
+  # Deployment
+  VERCEL_TOKEN_STAGING: "{{ secrets.VERCEL_TOKEN_STAGING }}"
+  VERCEL_ORG_ID: "{{ secrets.VERCEL_ORG_ID }}"
+  VERCEL_PROJECT_ID_STAGING: "{{ secrets.VERCEL_PROJECT_ID_STAGING }}"
+  
+  # Database
+  SUPABASE_ACCESS_TOKEN: "{{ secrets.SUPABASE_ACCESS_TOKEN }}"
+  SUPABASE_PROJECT_REF_STAGING: "{{ secrets.SUPABASE_PROJECT_REF_STAGING }}"
+  SUPABASE_DB_URL_STAGING: "{{ secrets.SUPABASE_DB_URL_STAGING }}"
+  SUPABASE_ANON_KEY_STAGING: "{{ secrets.SUPABASE_ANON_KEY_STAGING }}"
+  SUPABASE_SERVICE_ROLE_KEY_STAGING: "{{ secrets.SUPABASE_SERVICE_ROLE_KEY_STAGING }}"
+  
+  # Application
+  NEXTAUTH_SECRET_STAGING: "{{ secrets.NEXTAUTH_SECRET_STAGING }}"
+  NEXTAUTH_URL_STAGING: "{{ secrets.NEXTAUTH_URL_STAGING }}"
+  JWT_SECRET_STAGING: "{{ secrets.JWT_SECRET_STAGING }}"
+  ENCRYPTION_KEY_STAGING: "{{ secrets.ENCRYPTION_KEY_STAGING }}"
+  
+  # External Services
+  OPENAI_API_KEY_STAGING: "{{ secrets.OPENAI_API_KEY_STAGING }}"
+  STRIPE_SECRET_KEY_STAGING: "{{ secrets.STRIPE_SECRET_KEY_STAGING }}"
+  SENDGRID_API_KEY_STAGING: "{{ secrets.SENDGRID_API_KEY_STAGING }}"
+  
+  # Monitoring
+  SENTRY_DSN_STAGING: "{{ secrets.SENTRY_DSN_STAGING }}"
+  DATADOG_API_KEY_STAGING: "{{ secrets.DATADOG_API_KEY_STAGING }}"
+
+# Security Validation Rules
+security_rules:
+  # Required security checks before deployment
+  required_checks:
+    - "security-scan"
+    - "dependency-audit"
+    - "secret-validation"
+    - "code-quality"
+    
+  # Auto-deployment configuration
+  auto_deploy:
+    enabled: true
+    branch: "develop"
+    require_status_checks: true
+    
+  # Monitoring configuration
+  monitoring:
+    enabled: true
+    alerts:
+      - "deployment-failure"
+      - "security-violations"
+
+# Deployment Configuration
+deployment:
+  # Deployment strategy
+  strategy: "rolling"
+  
+  # Health checks
+  health_checks:
+    enabled: true
+    path: "/api/health"
+    timeout: 30 # seconds
+    
+  # Rollback configuration
+  rollback:
+    enabled: true
+    automatic: true
+    conditions:
+      - "health_check_failure"
+      - "error_rate_threshold"
+
+# Notification Settings
+notifications:
+  # Slack notifications
+  slack:
+    enabled: true
+    webhook_url: "{{ secrets.SLACK_WEBHOOK_URL }}"
+    channels:
+      - "#staging-deployments"
+      - "#security-alerts"
+      
+  # Email notifications
+  email:
+    enabled: true
+    recipients:
+      - "devops@nutricoach.com"
+      - "security@nutricoach.com"
+
+# Audit and Compliance
+audit_settings:
+  # Log all deployment activities
+  logging:
+    enabled: true
+    retention_days: 90
+    
+  # Compliance tracking
+  compliance:
+    gdpr: true
+    soc2: true
+    
+# Documentation
+documentation:
+  runbook_url: "https://docs.nutricoach.com/deployments/staging"
+  incident_response: "https://docs.nutricoach.com/security/incident-response"
+  contact_info:
+    primary: "devops@nutricoach.com"
+    security: "security@nutricoach.com"
+
+# Last Updated
+metadata:
+  created_by: "Security Team"
+  last_updated: "2024-12-24"
+  version: "1.0"
+  review_date: "2025-03-24"

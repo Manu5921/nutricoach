@@ -1,0 +1,508 @@
+name: Security & Audit
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run security scans daily at 02:00 UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      scan_type:
+        description: 'Type of security scan'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - dependencies
+          - code
+          - container
+
+concurrency:
+  group: security-${{ github.ref }}-${{ inputs.scan_type || 'auto' }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '8.0.0'
+
+jobs:
+  dependency-audit:
+    name: Dependency Security Audit
+    runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_dispatch' || inputs.scan_type == 'full' || inputs.scan_type == 'dependencies'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run pnpm audit
+        id: pnpm-audit
+        run: |
+          echo "## PNPM Audit Results" > audit-results.md
+          echo "" >> audit-results.md
+          
+          if pnpm audit --audit-level moderate --json > pnpm-audit.json 2>&1; then
+            echo "✅ No moderate or high severity vulnerabilities found" >> audit-results.md
+            echo "audit-status=passed" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Vulnerabilities detected:" >> audit-results.md
+            echo '```json' >> audit-results.md
+            cat pnpm-audit.json >> audit-results.md
+            echo '```' >> audit-results.md
+            echo "audit-status=failed" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run npm audit (fallback)
+        if: steps.pnpm-audit.outputs.audit-status == 'failed'
+        run: |
+          echo "" >> audit-results.md
+          echo "## NPM Audit Results" >> audit-results.md
+          echo "" >> audit-results.md
+          
+          if npm audit --audit-level moderate --json > npm-audit.json 2>&1; then
+            echo "✅ NPM audit passed" >> audit-results.md
+          else
+            echo "⚠️ NPM audit found issues:" >> audit-results.md
+            echo '```json' >> audit-results.md
+            cat npm-audit.json >> audit-results.md
+            echo '```' >> audit-results.md
+          fi
+
+      - name: Check for known vulnerabilities with audit-ci
+        run: |
+          echo "" >> audit-results.md
+          echo "## Audit CI Results" >> audit-results.md
+          echo "" >> audit-results.md
+          
+          if npx audit-ci@^6 --config .audit-ci.json; then
+            echo "✅ audit-ci checks passed" >> audit-results.md
+          else
+            echo "⚠️ audit-ci found critical vulnerabilities" >> audit-results.md
+          fi
+        continue-on-error: true
+
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-audit-results
+          path: |
+            audit-results.md
+            pnpm-audit.json
+            npm-audit.json
+          retention-days: 30
+
+  snyk-security-scan:
+    name: Snyk Security Scan
+    runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_dispatch' || inputs.scan_type == 'full' || inputs.scan_type == 'dependencies'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --json > snyk-results.json
+
+      - name: Run Snyk to check for license issues
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: test
+          args: --org=${{ secrets.SNYK_ORG_ID }} --json --print-deps | tee snyk-licenses.json
+
+      - name: Upload Snyk results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-security-results
+          path: |
+            snyk-results.json
+            snyk-licenses.json
+          retention-days: 30
+
+  codeql-analysis:
+    name: CodeQL Security Analysis
+    runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_dispatch' || inputs.scan_type == 'full' || inputs.scan_type == 'code'
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript', 'typescript']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended,security-and-quality
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build for analysis
+        run: pnpm build
+        env:
+          NODE_ENV: production
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
+
+  secret-scan:
+    name: Secret Detection
+    runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_dispatch' || inputs.scan_type == 'full' || inputs.scan_type == 'code'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+          extra_args: --debug --only-verified
+
+      - name: Run GitLeaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  semgrep-scan:
+    name: Semgrep Security Scan
+    runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_dispatch' || inputs.scan_type == 'full' || inputs.scan_type == 'code'
+    container:
+      image: returntocorp/semgrep
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep
+        run: |
+          semgrep --config=auto \
+                   --json \
+                   --output=semgrep-results.json \
+                   --error \
+                   --skip-unknown-extensions \
+                   .
+
+      - name: Upload Semgrep results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-security-results
+          path: semgrep-results.json
+          retention-days: 30
+
+  docker-security:
+    name: Docker Security Scan
+    runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_dispatch' || inputs.scan_type == 'full' || inputs.scan_type == 'container'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image for scanning
+        run: |
+          if [ -f "Dockerfile" ]; then
+            docker build -t nutricoach:security-scan .
+          else
+            echo "No Dockerfile found, skipping Docker security scan"
+            exit 0
+          fi
+
+      - name: Run Trivy vulnerability scanner
+        if: success()
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'nutricoach:security-scan'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Run Hadolint Dockerfile linter
+        if: hashFiles('Dockerfile') != ''
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          format: sarif
+          output-file: hadolint-results.sarif
+
+      - name: Upload Hadolint results
+        if: always() && hashFiles('Dockerfile') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: hadolint-results.sarif
+
+  license-compliance:
+    name: License Compliance Check
+    runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_dispatch' || inputs.scan_type == 'full' || inputs.scan_type == 'dependencies'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check licenses with license-checker
+        run: |
+          npx license-checker --json --out license-report.json
+          npx license-checker --summary --out license-summary.txt
+          
+          # Check for prohibited licenses
+          echo "## License Compliance Report" > license-compliance.md
+          echo "" >> license-compliance.md
+          
+          prohibited_licenses=("GPL-2.0" "GPL-3.0" "AGPL-1.0" "AGPL-3.0")
+          
+          for license in "${prohibited_licenses[@]}"; do
+            if grep -q "$license" license-report.json; then
+              echo "❌ Prohibited license detected: $license" >> license-compliance.md
+              echo "prohibited-found=true" >> $GITHUB_ENV
+            fi
+          done
+          
+          if [ "${prohibited_found:-false}" != "true" ]; then
+            echo "✅ No prohibited licenses found" >> license-compliance.md
+          fi
+          
+          echo "" >> license-compliance.md
+          echo "### License Summary" >> license-compliance.md
+          echo '```' >> license-compliance.md
+          cat license-summary.txt >> license-compliance.md
+          echo '```' >> license-compliance.md
+
+      - name: Upload license reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-compliance-results
+          path: |
+            license-report.json
+            license-summary.txt
+            license-compliance.md
+          retention-days: 30
+
+      - name: Fail if prohibited licenses found
+        if: env.prohibited-found == 'true'
+        run: |
+          echo "Prohibited licenses detected. Please review license-compliance.md"
+          exit 1
+
+  security-scorecard:
+    name: OSSF Security Scorecard
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.scan_type == 'full')
+    permissions:
+      security-events: write
+      id-token: write
+      actions: read
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Run analysis
+        uses: ossf/scorecard-action@v2.3.1
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+
+      - name: Upload SARIF results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [dependency-audit, snyk-security-scan, codeql-analysis, secret-scan, semgrep-scan, license-compliance]
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: security-artifacts
+
+      - name: Generate security summary
+        run: |
+          echo "# Security Scan Summary" > security-summary.md
+          echo "" >> security-summary.md
+          echo "**Date:** $(date)" >> security-summary.md
+          echo "**Repository:** ${{ github.repository }}" >> security-summary.md
+          echo "**Commit:** ${{ github.sha }}" >> security-summary.md
+          echo "**Branch:** ${{ github.ref_name }}" >> security-summary.md
+          echo "" >> security-summary.md
+          
+          echo "## Scan Results" >> security-summary.md
+          echo "" >> security-summary.md
+          
+          # Check each job result
+          jobs=("dependency-audit" "snyk-security-scan" "codeql-analysis" "secret-scan" "semgrep-scan" "license-compliance")
+          
+          for job in "${jobs[@]}"; do
+            case "${{ needs[job].result }}" in
+              "success")
+                echo "- ✅ $job: Passed" >> security-summary.md
+                ;;
+              "failure")
+                echo "- ❌ $job: Failed" >> security-summary.md
+                ;;
+              "skipped")
+                echo "- ⏭️ $job: Skipped" >> security-summary.md
+                ;;
+              *)
+                echo "- ❓ $job: Unknown" >> security-summary.md
+                ;;
+            esac
+          done
+          
+          echo "" >> security-summary.md
+          echo "## Recommendations" >> security-summary.md
+          echo "" >> security-summary.md
+          
+          # Add recommendations based on failures
+          if [[ "${{ needs.dependency-audit.result }}" == "failure" ]]; then
+            echo "- 🔧 Update vulnerable dependencies" >> security-summary.md
+          fi
+          
+          if [[ "${{ needs.secret-scan.result }}" == "failure" ]]; then
+            echo "- 🔐 Review and remove detected secrets" >> security-summary.md
+          fi
+          
+          if [[ "${{ needs.license-compliance.result }}" == "failure" ]]; then
+            echo "- ⚖️ Review license compliance issues" >> security-summary.md
+          fi
+          
+          echo "" >> security-summary.md
+          echo "## Artifacts" >> security-summary.md
+          echo "" >> security-summary.md
+          echo "Detailed results available in workflow artifacts:" >> security-summary.md
+          
+          if [ -d "security-artifacts" ]; then
+            find security-artifacts -name "*.md" -o -name "*.json" | while read file; do
+              echo "- $(basename "$file")" >> security-summary.md
+            done
+          fi
+
+      - name: Upload security summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-summary
+          path: security-summary.md
+          retention-days: 90
+
+      - name: Comment on PR (if applicable)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync('security-summary.md', 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
+
+  notify-security:
+    name: Security Notifications
+    runs-on: ubuntu-latest
+    needs: [security-summary]
+    if: always() && (failure() || cancelled())
+    steps:
+      - name: Notify security team
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          channel: '#security'
+          text: |
+            🚨 **Security Scan Alert**
+            
+            **Repository:** ${{ github.repository }}
+            **Branch:** ${{ github.ref_name }}
+            **Trigger:** ${{ github.event_name }}
+            **Time:** $(date)
+            
+            One or more security scans have failed. Please review the results.
+            
+            [View Workflow](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SECURITY_SLACK_WEBHOOK_URL }}

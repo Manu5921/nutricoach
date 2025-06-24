@@ -1,0 +1,48 @@
+{
+  "moderate": true,
+  "high": true,
+  "critical": true,
+  "report-type": "summary",
+  "output-format": "text",
+  "skip-dev": false,
+  "allowlist": [],
+  "denylist": [],
+  "registry": "https://registry.npmjs.org",
+  "retry": {
+    "count": 3,
+    "factor": 2,
+    "minTimeout": 1000,
+    "maxTimeout": 60000
+  },
+  "levels": {
+    "low": false,
+    "moderate": true,
+    "high": true,
+    "critical": true
+  },
+  "package-manager": "pnpm",
+  "config": {
+    "timeout": 30000,
+    "concurrent-audits": 5
+  },
+  "advisories": {
+    "exclude": [],
+    "include": ["*"]
+  },
+  "reporting": {
+    "format": ["text", "json"],
+    "output": "./security-audit-results",
+    "include-dev": true,
+    "include-optional": true
+  },
+  "thresholds": {
+    "moderate": 10,
+    "high": 5,
+    "critical": 0
+  },
+  "fail-on": {
+    "moderate": false,
+    "high": true,
+    "critical": true
+  }
+}
