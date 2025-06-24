@@ -1,4 +1,4 @@
-import { createServerComponentClient } from '@/lib/supabase'
+import { createServerComponentClient } from '@/lib/supabase-server' // Changed import path
 import { UserProfile, EncryptedHealthProfile, SecurityLevel } from './types'
 import { DataEncryption, SecurityAudit, AccessControl, HealthDataSecurity } from './security'
 

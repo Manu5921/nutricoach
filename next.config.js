@@ -15,6 +15,7 @@ const nextConfig = {
   experimental: {
     // Optimize memory usage during build
     webpackBuildWorker: true,
+    nodeMiddleware: true, // Added as per user feedback
   },
   
   // Security headers
