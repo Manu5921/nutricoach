@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 import { SecurityLevel, SecurityAuditLog } from './types'
-import { createServerComponentClient } from '@/lib/supabase-server' // Changed import path
+import { createServerComponentClient } from '@/lib/supabase-railway' // Railway-compatible import
 
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY!
 const ALGORITHM = 'aes-256-gcm'

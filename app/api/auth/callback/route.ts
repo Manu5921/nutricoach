@@ -1,6 +1,5 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
+import { createServerComponentClient } from '@/lib/supabase-railway'
 import { UserService } from '@/lib/auth/user-service'
 import { SecurityAudit } from '@/lib/auth/security'
 import { SecurityLevel } from '@/lib/auth/types'
@@ -11,7 +10,7 @@ export async function GET(request: NextRequest) {
   const next = searchParams.get('next') ?? '/dashboard'
 
   if (code) {
-    const supabase = createRouteHandlerClient({ cookies })
+    const supabase = createServerComponentClient()
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     const userAgent = request.headers.get('user-agent') || 'unknown'
 
