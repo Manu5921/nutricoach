@@ -3,6 +3,8 @@ const nextConfig = {
   // Output configuration for Railway deployment
   output: 'standalone',
   
+  // Asset prefix for Railway deployment
+  assetPrefix: process.env.NODE_ENV === 'production' ? '' : '',
   
   // Force dynamic rendering for Railway deployment
   trailingSlash: false,
