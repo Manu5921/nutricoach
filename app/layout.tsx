@@ -8,9 +8,8 @@ export const metadata = {
   description: 'Transformez votre alimentation avec des recettes personnalisées, des conseils nutritionnels adaptatifs et un suivi complet de votre bien-être. L\'intelligence artificielle au service de votre santé.',
   keywords: 'nutrition, anti-inflammatoire, IA, recettes personnalisées, santé, bien-être',
   authors: [{ name: 'NutriCoach' }],
-  viewport: 'width=device-width, initial-scale=1',
-  themeColor: '#16a34a',
   robots: 'index, follow',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://nutricoach-production.up.railway.app'),
   openGraph: {
     title: 'NutriCoach - Nutrition Anti-Inflammatoire Personnalisée par IA',
     description: 'Transformez votre alimentation avec l\'intelligence artificielle',
@@ -33,6 +32,17 @@ export const metadata = {
     images: ['/og-image.jpg'],
   },
 }
+
+export function generateViewport() {
+  return {
+    width: 'device-width',
+    initialScale: 1,
+    themeColor: '#16a34a',
+  }
+}
+
+// Force dynamic rendering for Railway deployment
+export const dynamic = 'force-dynamic'
 
 export default function RootLayout({
   children,

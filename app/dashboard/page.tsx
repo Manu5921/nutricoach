@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client' // Changed import path
 // import { UserService } from '@/lib/auth/user-service' // Commented out for now
 import { UserProfile } from '@/lib/auth/types' // Assuming UserProfile is client-safe
 
-export default function DashboardPage() {
+function DashboardContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
@@ -311,5 +311,18 @@ export default function DashboardPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Chargement...</p>
+      </div>
+    </div>}>
+      <DashboardContent />
+    </Suspense>
   )
 }

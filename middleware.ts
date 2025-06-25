@@ -1,4 +1,4 @@
-export const runtime = 'nodejs'; // Force Node.js runtime pour compatibilité avec le module crypto
+// Runtime will default to Node.js on Railway - no edge runtime restrictions
 
 import { createMiddlewareClient } from '@/lib/supabase-server'
 import { NextResponse } from 'next/server'
