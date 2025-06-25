@@ -3,6 +3,7 @@ const nextConfig = {
   // Output configuration for Railway deployment
   output: 'standalone',
   
+  
   // Force dynamic rendering for Railway deployment
   trailingSlash: false,
   
