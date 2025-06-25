@@ -1,6 +1,6 @@
 // Runtime will default to Node.js on Railway - no edge runtime restrictions
 
-import { createMiddlewareClient } from '@/lib/supabase-server'
+import { createMiddlewareClient } from '@/lib/supabase-railway'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { UserService } from '@/lib/auth/user-service'

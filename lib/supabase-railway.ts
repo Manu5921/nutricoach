@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 
-// Railway-compatible Supabase client WITHOUT next/headers
+// Railway-specific Supabase client - NO next/headers imports
 export function createServerComponentClient() {
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,17 +12,17 @@ export function createServerComponentClient() {
           return undefined
         },
         set() {
-          // No-op for Railway deployment
+          // No-op for Railway
         },
         remove() {
-          // No-op for Railway deployment
+          // No-op for Railway
         },
       },
     }
   )
 }
 
-// Middleware Supabase client for Railway
+// Railway middleware client
 export function createMiddlewareClient(request: NextRequest) {
   let response = NextResponse.next({
     request: {

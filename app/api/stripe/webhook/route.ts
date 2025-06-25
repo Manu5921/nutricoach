@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { createServerComponentClient } from '@/lib/supabase-server' // Changed import path
+import { createServerComponentClient } from '@/lib/supabase-railway' // Railway-compatible import
 import { SecurityAudit } from '@/lib/auth/security'
 import { SecurityLevel } from '@/lib/auth/types'
 

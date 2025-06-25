@@ -1,4 +1,3 @@
-// Simple re-export to avoid build errors
-// This file exists to handle legacy imports that might reference lib/supabase
+// Railway-compatible exports - using new file to avoid cache issues
 export { createClient } from './supabase-client'
-export { createServerComponentClient, createMiddlewareClient } from './supabase-server'
+export { createServerComponentClient, createMiddlewareClient } from './supabase-railway'
