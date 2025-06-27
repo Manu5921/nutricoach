@@ -2,17 +2,17 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase-client' // Changed import path
-// import { UserService } from '@/lib/auth/user-service' // Commented out for now
-import { UserProfile } from '@/lib/auth/types' // Assuming UserProfile is client-safe
+import { createClient } from '@/lib/supabase-client'
+import { UserService } from '@/lib/auth/user-service'
+import { UserProfile } from '@/lib/auth/types'
 
 function DashboardContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
-  // const userService = new UserService() // Commented out for now
+  const userService = new UserService()
   
-  const [user, setUser] = useState<UserProfile | null>(null) // UserProfile might need adjustment if it contains server-only fields
+  const [user, setUser] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [hasAccess, setHasAccess] = useState(false)
   const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(null)
@@ -36,40 +36,25 @@ function DashboardContent() {
       }
 
       // Get user profile with enhanced data
-      // const userProfile = await userService.getUserProfile( // TODO: Refactor to server-side data fetching
-      //   session.user.id,
-      //   1, // SecurityLevel.PERSONAL
-      //   {
-      //     ipAddress: 'client-side',
-      //     userAgent: navigator.userAgent
-      //   }
-      // )
+      const userProfile = await userService.getUserProfile(session.user.id)
 
-      // if (!userProfile) {
-      //   router.push('/login')
-      //   return
-      // }
+      if (!userProfile) {
+        router.push('/login')
+        return
+      }
 
-      // setUser(userProfile) // TODO: Set user from server-fetched data
+      setUser(userProfile)
 
-      // // Check access and trial status
-      // const accessStatus = await userService.hasActiveAccess(session.user.id) // TODO: Refactor
-      // setHasAccess(accessStatus) // TODO: Set from server-fetched data
+      // Check access and trial status
+      const accessStatus = await userService.hasActiveAccess(session.user.id)
+      setHasAccess(accessStatus)
 
-      // // Calculate trial days left
-      // if (userProfile.trial_ends_at && userProfile.subscription_status !== 'active') { // TODO: Use server-fetched data
-      //   const trialEnd = new Date(userProfile.trial_ends_at)
-      //   const now = new Date()
-      //   const daysLeft = Math.max(0, Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
-      //   setTrialDaysLeft(daysLeft)
-      // }
-
-      // Fallback for now as userService calls are commented
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (authUser) {
-        // Simulating some user data - this is NOT a complete profile
-        setUser({ id: authUser.id, email: authUser.email } as UserProfile);
-        setHasAccess(true); // Assume access for now to render dashboard parts
+      // Calculate trial days left
+      if (userProfile.trial_ends_at && userProfile.subscription_status !== 'active') {
+        const trialEnd = new Date(userProfile.trial_ends_at)
+        const now = new Date()
+        const daysLeft = Math.max(0, Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+        setTrialDaysLeft(daysLeft)
       }
 
 
