@@ -1,11 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-// Simplified logout for Railway deployment
-// TODO: Re-enable auth logic after successful deployment
+import { createClient } from '@/lib/supabase-client'
 
 export async function POST(request: NextRequest) {
-  return NextResponse.json({ 
-    message: "Logout endpoint deployed successfully",
-    status: "ready_for_configuration" 
-  })
+  try {
+    const supabase = createClient()
+
+    // Sign out user
+    const { error } = await supabase.auth.signOut()
+
+    if (error) {
+      console.error('Logout error:', error)
+      return NextResponse.json(
+        { error: 'Erreur lors de la déconnexion' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Déconnexion réussie'
+    })
+
+  } catch (error) {
+    console.error('Logout API error:', error)
+    return NextResponse.json(
+      { error: 'Erreur interne du serveur' },
+      { status: 500 }
+    )
+  }
 }
