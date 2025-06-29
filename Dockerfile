@@ -1,4 +1,4 @@
-# Simple Dockerfile for Railway deployment
+# Railway Dockerfile - Fixed npm ci issue
 FROM node:18-alpine
 
 # Set working directory
@@ -10,7 +10,7 @@ RUN apk add --no-cache libc6-compat
 # Copy package files
 COPY package*.json ./
 
-# Install ALL dependencies (needed for TypeScript build)
+# Install ALL dependencies (Next.js needs TypeScript for build)
 RUN npm ci
 
 # Copy source code
