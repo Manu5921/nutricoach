@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useABTest } from '@/components/ab-testing/ABTestProvider'
+import { trackBusinessEvents } from '@/components/analytics/GoogleAnalytics'
 
 interface Testimonial {
   id: number
@@ -84,6 +86,75 @@ const testimonials: Testimonial[] = [
   }
 ]
 
+// Emotional variants for A/B testing
+const emotionalTestimonials: Testimonial[] = [
+  {
+    id: 1,
+    name: "Marie L.",
+    age: 42,
+    location: "Lyon",
+    usageDuration: "3 mois",
+    result: "Je me sens renaître !",
+    metric: "Fini les douleurs constantes",
+    quote: "C'est magique ! Mes matins difficiles appartiennent au passé. Je peux enfin jouer avec mes enfants sans souffrir. NutriCoach a littéralement changé ma vie.",
+    avatar: "👩‍⚕️",
+    rating: 5,
+    condition: "Arthrite rhumatoïde"
+  },
+  {
+    id: 2,
+    name: "Pierre M.",
+    age: 38,
+    location: "Paris",
+    usageDuration: "2 mois",
+    result: "Retrouvé ma confiance en moi",
+    metric: "Plus jamais de ballonnements",
+    quote: "Incroyable ! Je me sens léger et plein d'énergie. Mes collègues me demandent mon secret. C'est simple : NutriCoach a transformé ma relation à la nourriture.",
+    avatar: "👨‍💼",
+    rating: 5,
+    condition: "Syndrome métabolique"
+  },
+  {
+    id: 3,
+    name: "Sophie R.",
+    age: 35,
+    location: "Bordeaux",
+    usageDuration: "4 mois",
+    result: "Je déborde d'énergie",
+    metric: "Terminé les après-midi difficiles",
+    quote: "Révolutionnaire ! Plus de coups de fatigue, plus de frustration. Je suis enfin la personne dynamique que j'ai toujours voulu être.",
+    avatar: "👩‍🎨",
+    rating: 5,
+    condition: "Fatigue chronique"
+  },
+  {
+    id: 4,
+    name: "Thomas D.",
+    age: 44,
+    location: "Lille",
+    usageDuration: "5 mois",
+    result: "Mon cœur me dit merci",
+    metric: "Fini l'angoisse des analyses",
+    quote: "Libérateur ! Plus de stress à chaque visite médicale. Je mange avec plaisir en sachant que je prends soin de mon cœur. C'est un vrai soulagement.",
+    avatar: "👨‍🔬",
+    rating: 5,
+    condition: "Hypercholestérolémie"
+  },
+  {
+    id: 5,
+    name: "Isabelle K.",
+    age: 51,
+    location: "Toulouse",
+    usageDuration: "6 mois",
+    result: "Enfin sereine avec ma santé",
+    metric: "Plus de peur du sucre",
+    quote: "Fantastique ! J'ai retrouvé la joie de cuisiner et de partager des repas. Plus de culpabilité, plus d'inquiétude. Je vis enfin pleinement.",
+    avatar: "👩‍🍳",
+    rating: 5,
+    condition: "Diabète type 2"
+  }
+]
+
 const trustBadges = [
   { icon: "🏥", text: "Validé par des nutritionnistes", color: "from-green-500 to-green-600" },
   { icon: "🔒", text: "Données médicales sécurisées", color: "from-blue-500 to-blue-600" },
@@ -94,6 +165,12 @@ const trustBadges = [
 export default function TestimonialsSection() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isVisible, setIsVisible] = useState(false)
+  
+  // A/B test for testimonials style
+  const { variant: testimonialsVariant, trackConversion } = useABTest('testimonials_style')
+  
+  // Choose testimonials based on A/B test variant
+  const activeTestimonials = testimonialsVariant === 'control' ? testimonials : emotionalTestimonials
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -119,8 +196,14 @@ export default function TestimonialsSection() {
 
   useEffect(() => {
     if (isVisible) {
+      // Track testimonials section view
+      trackBusinessEvents.featureUsed('testimonials_viewed', undefined, {
+        variant: testimonialsVariant,
+        testimonials_style: testimonialsVariant === 'control' ? 'metrics' : 'emotional'
+      })
+      
       const interval = setInterval(() => {
-        setCurrentIndex((prev) => (prev + 1) % testimonials.length)
+        setCurrentIndex((prev) => (prev + 1) % activeTestimonials.length)
       }, 5000)
       return () => clearInterval(interval)
     }
@@ -167,43 +250,63 @@ export default function TestimonialsSection() {
             <div className="flex flex-col md:flex-row items-center gap-8">
               {/* Avatar and Info */}
               <div className="flex-shrink-0 text-center">
-                <div className="text-6xl mb-4">{testimonials[currentIndex].avatar}</div>
+                <div className="text-6xl mb-4">{activeTestimonials[currentIndex].avatar}</div>
                 <div className="text-lg font-bold text-gray-900">
-                  {testimonials[currentIndex].name}
+                  {activeTestimonials[currentIndex].name}
                 </div>
                 <div className="text-gray-600">
-                  {testimonials[currentIndex].age} ans • {testimonials[currentIndex].location}
+                  {activeTestimonials[currentIndex].age} ans • {activeTestimonials[currentIndex].location}
                 </div>
                 <div className="text-sm text-blue-600 font-semibold mt-1">
-                  {testimonials[currentIndex].condition}
+                  {activeTestimonials[currentIndex].condition}
                 </div>
               </div>
 
               {/* Testimonial Content */}
               <div className="flex-1">
                 <div className="flex items-center mb-4">
-                  {renderStars(testimonials[currentIndex].rating)}
+                  {renderStars(activeTestimonials[currentIndex].rating)}
                   <span className="ml-2 text-sm text-gray-600">
-                    Utilise NutriCoach depuis {testimonials[currentIndex].usageDuration}
+                    Utilise NutriCoach depuis {activeTestimonials[currentIndex].usageDuration}
                   </span>
                 </div>
                 
                 <blockquote className="text-lg text-gray-700 italic mb-6 leading-relaxed">
-                  "{testimonials[currentIndex].quote}"
+                  "{activeTestimonials[currentIndex].quote}"
                 </blockquote>
 
                 {/* Results Metrics */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
-                    <div className="text-sm text-green-700 font-semibold mb-1">RÉSULTAT PRINCIPAL</div>
-                    <div className="text-xl font-bold text-green-800">
-                      {testimonials[currentIndex].result}
+                  <div className={`p-4 rounded-lg border ${
+                    testimonialsVariant === 'control'
+                      ? 'bg-gradient-to-r from-green-50 to-green-100 border-green-200'
+                      : 'bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200'
+                  }`}>
+                    <div className={`text-sm font-semibold mb-1 ${
+                      testimonialsVariant === 'control' ? 'text-green-700' : 'text-purple-700'
+                    }`}>
+                      {testimonialsVariant === 'control' ? 'RÉSULTAT PRINCIPAL' : 'TRANSFORMATION'}
+                    </div>
+                    <div className={`text-xl font-bold ${
+                      testimonialsVariant === 'control' ? 'text-green-800' : 'text-purple-800'
+                    }`}>
+                      {activeTestimonials[currentIndex].result}
                     </div>
                   </div>
-                  <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
-                    <div className="text-sm text-blue-700 font-semibold mb-1">MESURE MÉDICALE</div>
-                    <div className="text-lg font-bold text-blue-800">
-                      {testimonials[currentIndex].metric}
+                  <div className={`p-4 rounded-lg border ${
+                    testimonialsVariant === 'control'
+                      ? 'bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200'
+                      : 'bg-gradient-to-r from-pink-50 to-pink-100 border-pink-200'
+                  }`}>
+                    <div className={`text-sm font-semibold mb-1 ${
+                      testimonialsVariant === 'control' ? 'text-blue-700' : 'text-pink-700'
+                    }`}>
+                      {testimonialsVariant === 'control' ? 'MESURE MÉDICALE' : 'BÉNÉFICE RESSENTI'}
+                    </div>
+                    <div className={`text-lg font-bold ${
+                      testimonialsVariant === 'control' ? 'text-blue-800' : 'text-pink-800'
+                    }`}>
+                      {activeTestimonials[currentIndex].metric}
                     </div>
                   </div>
                 </div>
@@ -213,10 +316,14 @@ export default function TestimonialsSection() {
 
           {/* Navigation Dots */}
           <div className="flex justify-center mt-6 space-x-2">
-            {testimonials.map((_, index) => (
+            {activeTestimonials.map((_, index) => (
               <button
                 key={index}
-                onClick={() => setCurrentIndex(index)}
+                onClick={() => {
+                  setCurrentIndex(index)
+                  // Track testimonial interaction
+                  trackConversion('testimonial_navigation', 1)
+                }}
                 className={`w-3 h-3 rounded-full transition-all duration-200 ${
                   index === currentIndex
                     ? 'bg-green-600 w-8'

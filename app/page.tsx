@@ -9,11 +9,17 @@ import FAQSection from '@/components/FAQSection'
 import StickyCtaBanner from '@/components/StickyCtaBanner'
 import { OptimizedImage, imageSizes, blurPlaceholders } from '@/components/ui/OptimizedImage'
 import { StructuredData, schemaData } from '@/components/seo/StructuredData'
+import { ABTestCTA } from '@/components/ab-testing/ABTestButton'
+import { usePageTracking, useCTATracking } from '@/components/analytics/usePageTracking'
 
 export default function HomePage() {
   const router = useRouter()
   const supabase = createClient()
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
+  const { trackCTA } = useCTATracking()
+  
+  // Track page views automatically
+  usePageTracking()
 
   useEffect(() => {
     // Check if user is logged in
@@ -25,6 +31,9 @@ export default function HomePage() {
   }, [])
 
   const handleGetStarted = () => {
+    // Track CTA click
+    trackCTA(isLoggedIn ? 'Dashboard' : 'Commencer maintenant', 'hero_primary_cta')
+    
     if (isLoggedIn) {
       router.push('/dashboard')
     } else {
@@ -95,15 +104,15 @@ export default function HomePage() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <button
-              onClick={handleGetStarted}
-              className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
-            >
-              Commencer maintenant - 6,99€/mois
-            </button>
+            <ABTestCTA 
+              location="hero_primary_cta" 
+              className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
+              size="lg"
+            />
             <Link
               href="/pricing"
               className="border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-200"
+              onClick={() => trackCTA('Voir les tarifs', 'hero_secondary_cta')}
             >
               Voir les tarifs
             </Link>
@@ -319,12 +328,11 @@ export default function HomePage() {
             grâce à nos recommandations nutritionnelles personnalisées.
           </p>
           
-          <button
-            onClick={handleGetStarted}
+          <ABTestCTA 
+            location="cta_section_primary" 
             className="bg-white text-green-600 hover:bg-gray-100 px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg"
-          >
-            Commencer maintenant - 6,99€/mois
-          </button>
+            size="lg"
+          />
           
           <p className="text-green-100 mt-4 text-sm">
             Paiement sécurisé • Résiliation facile • Support inclus

@@ -3,6 +3,11 @@ import { Inter } from 'next/font/google'
 import CookieConsent from '@/components/CookieConsent'
 import { WebVitals } from '@/components/analytics/WebVitals'
 import { PerformanceMonitor } from '@/components/performance/PerformanceMonitor'
+import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics'
+import { ABTestProvider } from '@/components/ab-testing/ABTestProvider'
+import HeatmapTracker from '@/components/analytics/HeatmapTracker'
+import ExitIntentPopup from '@/components/growth/ExitIntentPopup'
+import PushNotificationManager from '@/components/growth/PushNotificationManager'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -68,12 +73,18 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://nutricoach-production.up.railway.app" />
       </head>
       <body className={`${inter.className} ${inter.variable} h-full antialiased`}>
-        <div id="root" className="min-h-full">
-          {children}
-        </div>
-        <CookieConsent />
-        <WebVitals />
-        <PerformanceMonitor />
+        <GoogleAnalytics />
+        <ABTestProvider>
+          <div id="root" className="min-h-full">
+            {children}
+          </div>
+          <CookieConsent />
+          <WebVitals />
+          <PerformanceMonitor />
+          <HeatmapTracker />
+          <ExitIntentPopup />
+          <PushNotificationManager />
+        </ABTestProvider>
       </body>
     </html>
   )

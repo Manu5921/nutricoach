@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { useABTest } from '@/components/ab-testing/ABTestProvider'
+import { trackBusinessEvents } from '@/components/analytics/GoogleAnalytics'
 
 interface FAQItem {
   id: number
@@ -95,6 +97,9 @@ const categoryColors = {
 export default function FAQSection() {
   const [openItems, setOpenItems] = useState<number[]>([1]) // First item open by default
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  
+  // A/B test for FAQ order
+  const { variant: faqOrderVariant, trackConversion } = useABTest('faq_order')
 
   const toggleItem = (id: number) => {
     setOpenItems(prev => 
@@ -102,10 +107,39 @@ export default function FAQSection() {
         ? prev.filter(item => item !== id)
         : [...prev, id]
     )
+    
+    // Track FAQ interaction
+    const faqItem = faqData.find(item => item.id === id)
+    if (faqItem) {
+      trackBusinessEvents.featureUsed('faq_question_opened', undefined, {
+        question_category: faqItem.category,
+        question_id: id,
+        faq_order_variant: faqOrderVariant
+      })
+      
+      // Track as conversion if payment-related question
+      if (faqItem.category === 'payment') {
+        trackConversion('faq_payment_interaction', 1)
+      }
+    }
+  }
+
+  // Create priority mapping based on A/B test variant
+  const getPriorityForVariant = (item: FAQItem) => {
+    if (faqOrderVariant === 'control') {
+      // Control: security first
+      if (item.category === 'security') return item.priority - 10
+      if (item.category === 'payment') return item.priority + 5
+    } else {
+      // Variant: payment first  
+      if (item.category === 'payment') return item.priority - 10
+      if (item.category === 'security') return item.priority + 5
+    }
+    return item.priority
   }
 
   const filteredFAQs = selectedCategory === 'all' 
-    ? faqData.sort((a, b) => a.priority - b.priority)
+    ? faqData.sort((a, b) => getPriorityForVariant(a) - getPriorityForVariant(b))
     : faqData.filter(item => item.category === selectedCategory).sort((a, b) => a.priority - b.priority)
 
   const categories = [

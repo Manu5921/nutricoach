@@ -4,6 +4,9 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client' // Changed import path
 import { loadStripe } from '@stripe/stripe-js'
+import { usePageTracking, useCTATracking } from '@/components/analytics/usePageTracking'
+import { useABTest } from '@/components/ab-testing/ABTestProvider'
+import { ABTestCTAText } from '@/components/ab-testing/ABTestButton'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -15,6 +18,13 @@ function PricingPageContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
+  
+  // Analytics and A/B testing hooks
+  const { trackCTA } = useCTATracking()
+  const { variant: layoutVariant } = useABTest('pricing_layout')
+  
+  // Track page views automatically
+  usePageTracking()
 
   // Check for URL parameters
   const canceled = searchParams.get('canceled')
@@ -30,6 +40,9 @@ function PricingPageContent() {
   }, [])
 
   const handleSubscribe = async () => {
+    // Track pricing CTA click
+    trackCTA('Commencer maintenant', 'pricing_subscribe_button')
+    
     if (!user) {
       router.push('/login?redirect=/pricing')
       return
@@ -186,7 +199,7 @@ function PricingPageContent() {
                     Chargement...
                   </span>
                 ) : (
-                  'Commencer maintenant - 6,99€/mois'
+                  <ABTestCTAText testId="cta_text" fallback="Commencer maintenant - 6,99€/mois" />
                 )}
               </button>
               
