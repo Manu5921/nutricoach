@@ -2,7 +2,7 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "DOCKERFILE",
-    "dockerfilePath": "Dockerfile"
+    "dockerfilePath": "Dockerfile.new"
   },
   "deploy": {
     "numReplicas": 1,
@@ -13,7 +13,7 @@
   "environments": {
     "production": {
       "variables": {
-        "RAILWAY_CACHE_BUST": "v3.0"
+        "RAILWAY_CACHE_BUST": "v4.0"
       }
     }
   }
