@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getCLS, getFCP, getFID, getLCP, getTTFB } from 'web-vitals'
+import { onCLS, onFCP, onFID, onLCP, onTTFB } from 'web-vitals'
 
 interface WebVitalsMetrics {
   cls: number | null
@@ -61,27 +61,27 @@ export function CoreWebVitalsOptimizer() {
     }
 
     // Measure Core Web Vitals
-    getCLS((metric) => {
+    onCLS((metric) => {
       clsValue = metric.value
       updateMetrics()
     })
 
-    getFCP((metric) => {
+    onFCP((metric) => {
       fcpValue = metric.value
       updateMetrics()
     })
 
-    getFID((metric) => {
+    onFID((metric) => {
       fidValue = metric.value
       updateMetrics()
     })
 
-    getLCP((metric) => {
+    onLCP((metric) => {
       lcpValue = metric.value
       updateMetrics()
     })
 
-    getTTFB((metric) => {
+    onTTFB((metric) => {
       ttfbValue = metric.value
       updateMetrics()
     })

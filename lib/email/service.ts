@@ -12,8 +12,8 @@ import {
 } from '@/components/email';
 import { render } from '@react-email/render';
 
-// Initialize Resend
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Resend only if API key is available
+const resend = new Resend(process.env.RESEND_API_KEY || 'fallback-key');
 
 interface EmailSendOptions {
   from?: string;

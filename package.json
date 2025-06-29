@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "echo 'Building NutriCoach without Stripe dependencies...' && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
@@ -47,7 +47,8 @@
     "resend": "^4.0.0",
     "handlebars": "^4.7.8",
     "juice": "^11.0.0",
-    "next-pwa": "^5.6.0"
+    "next-pwa": "^5.6.0",
+    "web-vitals": "^4.2.4"
   },
   "devDependencies": {
     "@lhci/cli": "^0.15.1",

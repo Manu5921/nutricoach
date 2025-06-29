@@ -1,16 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import webpush from 'web-push'
 
-// Configure web-push
-webpush.setVapidDetails(
-  'mailto:contact@nutricoach.app',
-  process.env.NEXT_PUBLIC_VAPID_KEY || '',
-  process.env.VAPID_PRIVATE_KEY || ''
-)
+// Configure web-push only if keys are available
+if (process.env.NEXT_PUBLIC_VAPID_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    'mailto:contact@nutricoach.app',
+    process.env.NEXT_PUBLIC_VAPID_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  )
+}
 
 // API endpoint for sending push notifications
 export async function POST(request: NextRequest) {
   try {
+    // Check if VAPID keys are configured
+    if (!process.env.NEXT_PUBLIC_VAPID_KEY || !process.env.VAPID_PRIVATE_KEY) {
+      return NextResponse.json({ error: 'Push notifications not configured' }, { status: 503 })
+    }
+
     const { 
       subscriptions, 
       title, 

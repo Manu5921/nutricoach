@@ -1,12 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Output configuration for Railway deployment
-  output: 'standalone',
+  // Standard configuration for Railway deployment
   
-  // Experimental features
-  experimental: {
-    serverComponentsExternalPackages: ['sharp'],
-  },
+  // Server external packages
+  serverExternalPackages: ['sharp'],
   
   // Disable source maps in production for faster builds
   productionBrowserSourceMaps: false,
