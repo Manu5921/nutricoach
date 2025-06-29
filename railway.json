@@ -7,7 +7,10 @@
   "environments": {
     "production": {
       "variables": {
-        "RAILWAY_CACHE_BUST": "v5.0-final-fix"
+        "RAILWAY_CACHE_BUST": "v5.0-final-fix",
+        "NEXT_PUBLIC_SENTRY_DSN": "https://1308e4009f86d89c058926d210bd4706@o4509553369022464.ingest.de.sentry.io/4509583095234640",
+        "SENTRY_ORG": "manucl",
+        "SENTRY_PROJECT": "nutricoach-railway"
       }
     }
   }
