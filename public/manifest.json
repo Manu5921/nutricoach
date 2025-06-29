@@ -1,0 +1,248 @@
+{
+  "name": "NutriCoach - Nutrition Anti-Inflammatoire IA",
+  "short_name": "NutriCoach",
+  "description": "Nutrition personnalisée par intelligence artificielle pour une alimentation anti-inflammatoire optimale",
+  "start_url": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "theme_color": "#16a34a",
+  "background_color": "#ffffff",
+  "lang": "fr",
+  "scope": "/",
+  "categories": ["health", "lifestyle", "food", "medical"],
+  "screenshots": [
+    {
+      "src": "/screenshots/mobile-dashboard.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "platform": "narrow",
+      "label": "Dashboard principal NutriCoach"
+    },
+    {
+      "src": "/screenshots/tablet-menu-generator.png", 
+      "sizes": "768x1024",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "Générateur de menus personnalisés"
+    }
+  ],
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Générer un menu",
+      "description": "Créer un menu personnalisé rapidement",
+      "url": "/menu/generate",
+      "icons": [
+        {
+          "src": "/icons/shortcut-menu.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Mon tableau de bord",
+      "description": "Accéder à mes données nutritionnelles",
+      "url": "/dashboard",
+      "icons": [
+        {
+          "src": "/icons/shortcut-dashboard.png",
+          "sizes": "96x96", 
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Scanner un aliment",
+      "description": "Analyser la composition nutritionnelle",
+      "url": "/scanner",
+      "icons": [
+        {
+          "src": "/icons/shortcut-scanner.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Mes recettes",
+      "description": "Consulter mes recettes favorites",
+      "url": "/recipes/favorites",
+      "icons": [
+        {
+          "src": "/icons/shortcut-recipes.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "share_target": {
+    "action": "/share-recipe",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [{
+        "name": "image",
+        "accept": ["image/jpeg", "image/png", "image/webp"]
+      }]
+    }
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+nutricoach",
+      "url": "/protocol-handler?recipe=%s"
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "/file-handler",
+      "accept": {
+        "application/json": [".json"],
+        "text/csv": [".csv"]
+      }
+    }
+  ],
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "handle_links": "preferred",
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.nutricoach.app",
+      "id": "com.nutricoach.app"
+    },
+    {
+      "platform": "itunes",
+      "url": "https://apps.apple.com/app/nutricoach/id123456789"
+    }
+  ],
+  "prefer_related_applications": false,
+  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
+  "dir": "ltr",
+  "permissions": [
+    "camera",
+    "geolocation",
+    "notifications", 
+    "background-sync",
+    "periodic-background-sync",
+    "accelerometer",
+    "gyroscope",
+    "magnetometer",
+    "push",
+    "storage-access"
+  ],
+  "features": [
+    "CrossOriginIsolated"
+  ],
+  "widgets": [
+    {
+      "name": "nutrition-quick-log",
+      "short_name": "Nutrition",
+      "description": "Enregistrement rapide de repas",
+      "tag": "nutrition-logger",
+      "ms_ac_template": "QuickNutritionLog",
+      "data": "/api/widget/nutrition-quick-log",
+      "screenshots": [
+        {
+          "src": "/widgets/nutrition-quick-log-screenshot.png",
+          "sizes": "300x150",
+          "label": "Widget d'enregistrement nutritionnel rapide"
+        }
+      ],
+      "icons": [
+        {
+          "src": "/widgets/nutrition-icon-72x72.png",
+          "sizes": "72x72"
+        }
+      ]
+    },
+    {
+      "name": "daily-nutrition-summary",
+      "short_name": "Résumé",
+      "description": "Résumé nutritionnel quotidien",
+      "tag": "daily-summary",
+      "ms_ac_template": "DailyNutritionSummary", 
+      "data": "/api/widget/daily-summary",
+      "screenshots": [
+        {
+          "src": "/widgets/daily-summary-screenshot.png",
+          "sizes": "300x200",
+          "label": "Widget de résumé nutritionnel quotidien"
+        }
+      ],
+      "icons": [
+        {
+          "src": "/widgets/summary-icon-72x72.png",
+          "sizes": "72x72"
+        }
+      ]
+    }
+  ],
+  "declarative_web_push": {
+    "connection_count": 1
+  }
+}
