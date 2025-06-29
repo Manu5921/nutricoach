@@ -27,4 +27,4 @@ RUN npm run build
 EXPOSE 3000
 
 # Start the application
-CMD ["npm", "start"]
+CMD ["npm", "start"]# Force Railway rebuild Dim 29 jui 2025 19:09:20 CEST
