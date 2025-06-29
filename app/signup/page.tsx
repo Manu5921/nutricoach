@@ -164,7 +164,7 @@ function SignupPageContent() {
             Créer un compte
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Commencez votre essai gratuit de 7 jours
+            Accès complet pour 6,99€/mois
           </p>
         </div>
 
@@ -278,7 +278,7 @@ function SignupPageContent() {
                     Création...
                   </span>
                 ) : (
-                  'Commencer mon essai gratuit'
+                  'Commencer maintenant - 6,99€/mois'
                 )}
               </button>
             </div>
@@ -322,8 +322,8 @@ function SignupPageContent() {
 
           <div className="mt-6 text-center">
             <div className="text-xs text-gray-500 space-y-1">
-              <p>✅ 7 jours d'essai gratuit</p>
-              <p>✅ Aucune carte de crédit requise</p>
+              <p>✅ Accès immédiat</p>
+              <p>✅ Paiement sécurisé</p>
               <p>✅ Résiliation facile</p>
             </div>
           </div>

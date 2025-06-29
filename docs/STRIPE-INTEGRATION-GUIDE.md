@@ -17,15 +17,14 @@ Plan Premium: 6,99€/mois
 
 ### 🔒 **Paywall Complet**
 ```javascript
-// Strategy: Trial 7 jours puis paywall strict
+// Strategy: Paiement direct sans trial
 const PRICING = {
-  trial_days: 7,
   monthly_price: 6.99,
   currency: 'EUR',
   stripe_price_id: 'price_nutricoach_monthly'
 };
 
-// Après 7 jours: Accès bloqué sans abonnement
+// Accès bloqué sans abonnement actif
 ```
 
 ---

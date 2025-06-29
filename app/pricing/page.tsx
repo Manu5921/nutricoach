@@ -126,7 +126,7 @@ function PricingPageContent() {
               <div className="text-gray-500 mb-6">par mois</div>
               
               <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-8">
-                <p className="text-green-700 font-semibold">🎁 Essai gratuit 7 jours</p>
+                <p className="text-green-700 font-semibold">🚀 Accès immédiat</p>
                 <p className="text-green-600 text-sm">Aucun engagement • Résiliation facile</p>
               </div>
 
@@ -186,7 +186,7 @@ function PricingPageContent() {
                     Chargement...
                   </span>
                 ) : (
-                  'Commencer mon essai gratuit'
+                  'Commencer maintenant - 6,99€/mois'
                 )}
               </button>
               
@@ -247,11 +247,11 @@ function PricingPageContent() {
             
             <details className="bg-white rounded-lg shadow-md">
               <summary className="p-4 font-semibold cursor-pointer hover:bg-gray-50">
-                L'essai gratuit est-il vraiment gratuit ?
+                Comment sont calculés les 6,99€ par mois ?
               </summary>
               <div className="p-4 pt-0 text-gray-600">
-                Absolument ! 7 jours complets d'accès à toutes les fonctionnalités. 
-                Aucun prélèvement avant la fin de la période d'essai.
+                Prix fixe de 6,99€/mois pour un accès complet à toutes les fonctionnalités. 
+                Facturation mensuelle simple et transparente.
               </div>
             </details>
             

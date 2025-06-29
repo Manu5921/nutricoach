@@ -1,7 +1,15 @@
 import './globals.css'
 import { Inter } from 'next/font/google'
+import CookieConsent from '@/components/CookieConsent'
+import { WebVitals } from '@/components/analytics/WebVitals'
+import { PerformanceMonitor } from '@/components/performance/PerformanceMonitor'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ 
+  subsets: ['latin'],
+  display: 'swap',
+  preload: true,
+  variable: '--font-inter',
+})
 
 export const metadata = {
   title: 'NutriCoach - Nutrition Anti-Inflammatoire Personnalisée par IA',
@@ -55,11 +63,17 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.json" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://nutricoach-production.up.railway.app" />
       </head>
-      <body className={`${inter.className} h-full antialiased`}>
+      <body className={`${inter.className} ${inter.variable} h-full antialiased`}>
         <div id="root" className="min-h-full">
           {children}
         </div>
+        <CookieConsent />
+        <WebVitals />
+        <PerformanceMonitor />
       </body>
     </html>
   )

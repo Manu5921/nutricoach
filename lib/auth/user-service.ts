@@ -349,13 +349,13 @@ export class UserService {
   }
 
   /**
-   * Check if user has active subscription or trial
+   * Check if user has active subscription
    */
   async hasActiveAccess(userId: string): Promise<boolean> {
     const supabase = this.getSupabaseClient();
     const { data: user, error } = await supabase
       .from('users')
-      .select('subscription_status, trial_ends_at, current_period_end')
+      .select('subscription_status, current_period_end')
       .eq('id', userId)
       .single()
 
@@ -365,14 +365,9 @@ export class UserService {
 
     const now = new Date()
     
-    // Check if subscription is active
+    // Check if subscription is active and not expired
     if (user.subscription_status === 'active' && user.current_period_end) {
       return new Date(user.current_period_end) > now
-    }
-
-    // Check if trial is still valid
-    if (user.trial_ends_at) {
-      return new Date(user.trial_ends_at) > now
     }
 
     return false

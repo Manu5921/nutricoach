@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase-client'
 import { UserService } from '@/lib/auth/user-service'
 import { UserProfile } from '@/lib/auth/types'
+import RGPDManager from '@/components/RGPDManager'
 
 function DashboardContent() {
   const router = useRouter()
@@ -16,10 +17,20 @@ function DashboardContent() {
   const [loading, setLoading] = useState(true)
   const [hasAccess, setHasAccess] = useState(false)
   const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(null)
+  const [activeTab, setActiveTab] = useState('overview')
 
   // Check for success parameter from Stripe
   const success = searchParams.get('success')
   const sessionId = searchParams.get('session_id')
+  
+  // Check for tab parameter in URL
+  const tabParam = searchParams.get('tab')
+  
+  useEffect(() => {
+    if (tabParam) {
+      setActiveTab(tabParam)
+    }
+  }, [tabParam])
 
   useEffect(() => {
     loadUserData()
@@ -89,10 +100,7 @@ function DashboardContent() {
           <div className="text-6xl mb-4">🔒</div>
           <h1 className="text-2xl font-bold mb-4 text-gray-900">Abonnement Requis</h1>
           <p className="text-gray-600 mb-6">
-            {trialDaysLeft === 0 
-              ? "Votre période d'essai est terminée. Abonnez-vous pour continuer à profiter de NutriCoach."
-              : "Un abonnement est requis pour accéder au dashboard."
-            }
+            Un abonnement de 6,99€/mois est requis pour accéder au dashboard et profiter de toutes les fonctionnalités NutriCoach.
           </p>
           <button
             onClick={() => router.push('/pricing')}
@@ -145,32 +153,83 @@ function DashboardContent() {
         </div>
       )}
 
-      {/* Trial Status */}
-      {user?.subscription_status !== 'active' && trialDaysLeft !== null && trialDaysLeft > 0 && (
+      {/* Subscription Status */}
+      {user?.subscription_status !== 'active' && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <span className="text-blue-600 text-xl mr-2">🎁</span>
+                <span className="text-blue-600 text-xl mr-2">🚀</span>
                 <p className="text-blue-800">
-                  Essai gratuit - {trialDaysLeft} jour{trialDaysLeft > 1 ? 's' : ''} restant{trialDaysLeft > 1 ? 's' : ''}
+                  Activez votre abonnement pour profiter de toutes les fonctionnalités
                 </p>
               </div>
               <button
                 onClick={() => router.push('/pricing')}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-semibold"
               >
-                S'abonner maintenant
+                S'abonner - 6,99€/mois
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Navigation Tabs */}
+      <nav className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex space-x-8">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'overview'
+                  ? 'border-green-500 text-green-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              🏠 Aperçu
+            </button>
+            <button
+              onClick={() => setActiveTab('menus')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'menus'
+                  ? 'border-green-500 text-green-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              🍽️ Mes Menus
+            </button>
+            <button
+              onClick={() => setActiveTab('profile')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'profile'
+                  ? 'border-green-500 text-green-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              ⚙️ Profil
+            </button>
+            <button
+              onClick={() => setActiveTab('privacy')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'privacy'
+                  ? 'border-green-500 text-green-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              🔒 Confidentialité & RGPD
+            </button>
+          </div>
+        </div>
+      </nav>
+
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Tab Content */}
+        {activeTab === 'overview' && (
+          <>
+            {/* Stats Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
               <div className="text-3xl mr-4">🍽️</div>
@@ -294,6 +353,65 @@ function DashboardContent() {
             </div>
           </div>
         </div>
+          </>
+        )}
+
+        {/* Privacy & RGPD Tab */}
+        {activeTab === 'privacy' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-2xl font-bold mb-4 text-gray-900">Confidentialité & RGPD</h2>
+              <p className="text-gray-600 mb-6">
+                Gérez vos données personnelles et exercez vos droits RGPD en toute simplicité.
+              </p>
+            </div>
+            <RGPDManager />
+          </div>
+        )}
+
+        {/* Menus Tab */}
+        {activeTab === 'menus' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-2xl font-bold mb-4 text-gray-900">Mes Menus</h2>
+              <div className="text-center py-8 text-gray-500">
+                <div className="text-4xl mb-4">🍽️</div>
+                <p>Aucun menu généré pour le moment</p>
+                <p className="text-sm mt-2 mb-4">
+                  Commencez par créer votre premier menu personnalisé !
+                </p>
+                <button
+                  onClick={() => router.push('/menu/generate')}
+                  className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Générer un menu
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Profile Tab */}
+        {activeTab === 'profile' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-2xl font-bold mb-4 text-gray-900">Mon Profil</h2>
+              <div className="text-center py-8 text-gray-500">
+                <div className="text-4xl mb-4">⚙️</div>
+                <p>Configuration de votre profil</p>
+                <p className="text-sm mt-2 mb-4">
+                  Personnalisez vos préférences alimentaires et objectifs santé
+                </p>
+                <button
+                  onClick={() => router.push('/profile')}
+                  className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Modifier mon profil
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )
