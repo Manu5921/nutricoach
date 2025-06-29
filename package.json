@@ -22,9 +22,6 @@
     "@supabase/auth-ui-shared": "^0.1.8",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.50.1",
-    "@types/node": "^22.10.1",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
     "autoprefixer": "^10.4.20",
     "clsx": "^2.1.1",
     "dotenv": "^16.6.0",
@@ -36,7 +33,6 @@
     "stripe": "^17.3.1",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^3.4.16",
-    "typescript": "^5.6.3",
     "web-push": "^3.6.7",
     "framer-motion": "^11.0.0",
     "workbox-webpack-plugin": "^7.0.0",
@@ -51,6 +47,10 @@
     "web-vitals": "^4.2.4"
   },
   "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "typescript": "^5.6.3",
     "@lhci/cli": "^0.15.1",
     "@next/bundle-analyzer": "^15.3.4",
     "eslint": "^8.57.1",

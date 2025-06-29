@@ -10,7 +10,7 @@ RUN apk add --no-cache libc6-compat
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies (all dependencies needed for build)
+# Install ALL dependencies (needed for TypeScript build)
 RUN npm ci
 
 # Copy source code
