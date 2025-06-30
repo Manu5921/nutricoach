@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  nutricoach:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3000"  # Port externe 3001 pour éviter conflit
+    environment:
+      # Production Core
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+      - PORT=3000
+      
+      # Base URL avec nouveau port
+      - NEXT_PUBLIC_BASE_URL=http://89.117.61.193:3001
+      
+      # Supabase Configuration
+      - NEXT_PUBLIC_SUPABASE_URL=https://sgombrccebqutpompbjj.supabase.co
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnb21icmNjZWJxdXRwb21wYmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4Mzk5NTUsImV4cCI6MjA2NjQxNTk1NX0.jsOfUsgNVWiRIdm8GJGoGAPYzZNRne3LladfTvdQnkA
+      - SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnb21icmNjZWJxdXRwb21wYmpqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDgzOTk1NSwiZXhwIjoyMDY2NDE1OTU1fQ.C96QktQzrTbZ4lm1gQPT6sJ9doSaIpXrHakxiyw2MXU
+      
+      # Sentry Error Tracking
+      - NEXT_PUBLIC_SENTRY_DSN=https://1308e4009f86d89c058926d210bd4706@o4509553369022464.ingest.de.sentry.io/4509583095234640
+      - SENTRY_ORG=manucl
+      - SENTRY_PROJECT=nutricoach-coolify
+      
+      # Security Keys (test)
+      - NEXTAUTH_SECRET=nutricoach_coolify_test_secret_32_chars
+      - ENCRYPTION_KEY=coolify_test_encryption_key_32_chars
+      - JWT_SECRET=coolify_test_jwt_secret_for_nutricoach
+      
+      # Stripe (Mode Test - Désactivé)
+      - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_disabled
+      - STRIPE_SECRET_KEY=sk_test_disabled
+      
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    labels:
+      # Coolify labels pour routing automatique
+      - "coolify.managed=true"
+      - "coolify.version=4.0"
+      - "traefik.enable=true"
+      - "traefik.http.routers.nutricoach.rule=PathPrefix(`/`)"
+      - "traefik.http.services.nutricoach.loadbalancer.server.port=3000"
+      
+    networks:
+      - coolify
+      
+networks:
+  coolify:
+    external: true
+    name: coolify
