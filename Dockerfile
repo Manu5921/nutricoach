@@ -24,6 +24,15 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_PUBLIC_BASE_URL=http://localhost:3000
 
+# Stripe fallbacks pour build
+ENV STRIPE_SECRET_KEY=sk_test_build_fallback
+ENV NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_build_fallback
+ENV STRIPE_WEBHOOK_SECRET=whsec_build_fallback
+ENV STRIPE_PRICE_MONTHLY=price_build_fallback
+
+# Skip validations pour build
+ENV SKIP_ENV_VALIDATION=true
+
 # Build the application avec variables par défaut
 RUN npm run build
 

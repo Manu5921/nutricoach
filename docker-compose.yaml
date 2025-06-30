@@ -35,9 +35,11 @@ services:
       - ENCRYPTION_KEY=coolify_test_encryption_key_32_chars
       - JWT_SECRET=coolify_test_jwt_secret_for_nutricoach
       
-      # Stripe (Mode Test - Désactivé)
-      - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_disabled
-      - STRIPE_SECRET_KEY=sk_test_disabled
+      # Stripe (Mode Test - Désactivé pour build)
+      - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_disabled_for_testing
+      - STRIPE_SECRET_KEY=sk_test_disabled_for_testing
+      - STRIPE_WEBHOOK_SECRET=whsec_disabled_for_testing
+      - STRIPE_PRICE_MONTHLY=price_disabled_for_testing
       
     restart: unless-stopped
     
