@@ -1,30 +1,46 @@
-# Railway Dockerfile - Fixed npm ci issue
+# Coolify Dockerfile - Optimisé pour build
 FROM node:18-alpine
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apk add --no-cache libc6-compat
+# Install system dependencies nécessaires
+RUN apk add --no-cache \
+    libc6-compat \
+    curl \
+    && rm -rf /var/cache/apk/*
 
-# Copy package files
+# Copy package files pour layer caching
 COPY package*.json ./
 
-# Install ALL dependencies (Next.js needs TypeScript for build)
-RUN npm ci
+# Install ALL dependencies (dev needed for build)
+RUN npm ci --include=dev && npm cache clean --force
 
 # Copy source code
 COPY . .
 
-# Set environment variables
+# Set environment variables par défaut
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_PUBLIC_BASE_URL=http://localhost:3000
 
-# Build the application
+# Build the application avec variables par défaut
 RUN npm run build
+
+# Remove dev dependencies après build
+RUN npm ci --omit=dev && npm cache clean --force
+
+# Create non-root user pour sécurité
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+USER nextjs
 
 # Expose port
 EXPOSE 3000
 
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+  CMD curl -f http://localhost:3000/api/health || exit 1
+
 # Start the application
-CMD ["npm", "start"]# Force Railway rebuild Dim 29 jui 2025 19:09:20 CEST
+CMD ["npm", "start"]

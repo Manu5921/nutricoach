@@ -13,6 +13,10 @@ services:
       - NEXT_TELEMETRY_DISABLED=1
       - PORT=3000
       
+      # Build variables critiques
+      - SKIP_ENV_VALIDATION=true
+      - NEXT_PRIVATE_STANDALONE=true
+      
       # Base URL avec nouveau port
       - NEXT_PUBLIC_BASE_URL=http://89.117.61.193:3001
       
